@@ -1,4 +1,4 @@
-﻿// ==UserScript==
+// ==UserScript==
 // @name        anime1 Danmaku
 // @namespace   anime1_danmaku
 // @supportURL  https://github.com/zhuzemin
@@ -62,10 +62,12 @@ var btn;
 function init(){
     debug("init");
     if(window.location.href.includes("bilibili.com")){
-        var cid=unsafeWindow.__INITIAL_STATE__.epInfo.cid;
+        setInterval(function(){
+            var cid=unsafeWindow.__INITIAL_STATE__.epInfo.cid;
         var href="https://api.bilibili.com/x/v1/dm/list.so?oid="+cid;
         debug("DanmakuLink: "+href);
         DisplayInput(href);
+        },2000); 
     }
     else if(window.location.href.includes("anime1.me")){
         DisplayInput("Paste Danmaku link here.");
@@ -92,12 +94,18 @@ function CreateButton(text,func){
 }
 
 function DisplayInput(href) {
+    if(input==null){
     input=document.createElement("input");
     input.setAttribute("type","text");
     input.setAttribute("value",href);
     input.size=80;
     body = document.querySelector('body');
     body.insertBefore(input, body.firstChild);
+        
+    }
+    else{
+        input.value=href;
+    }
 }
 
 function eyny(){
