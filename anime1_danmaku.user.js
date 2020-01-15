@@ -98,7 +98,7 @@ function init(){
         var run=function (){
             GetDanmaku(anime1);
         }
-        setInterval(run,10000);
+        setInterval(run,5000);
     }
     else if(window.location.href.includes("video.eyny.com")) {
         DisplayInput('https://api.bilibili.com...?oid=xxxxxx, https://ani.gamer.com.tw...?sn=xxxxxx');
@@ -181,12 +181,18 @@ function GetDanmaku(func) {
                 var parser = new DOMParser();
                 var xmlDoc   = parser.parseFromString('<?xml version="1.0" encoding="utf-8"?><i></i>', "text/xml");
                 for(var obj of Object.values( json)){
+                    try{
                         var d=xmlDoc.createElement("d");
                         d.innerHTML=obj.text;
                         var p=obj.time/10+",1,25,"+parseInt(obj.color.match(/#([\d\w]{6})/)[1],16)+",1550236858,0,55f99b31,12108265626271746";
                         d.setAttribute("p",p);
                         var root=xmlDoc.getElementsByTagName("i");
                         root[0].appendChild(d);
+                        
+                    }
+                    catch(e){
+                        continue;
+                    }
                 }
                 comments= (new XMLSerializer()).serializeToString(xmlDoc );
             }
