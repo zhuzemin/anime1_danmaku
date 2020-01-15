@@ -5,13 +5,14 @@
 // @description anime1 显示弹幕(bilibili.com / ani.gamer.com.tw)
 // @include     https://anime1.me/*
 // @include     https://i.animeone.me/*
+// @include     https://v.anime1.me/watch?v=*
 // @include     http://video.eyny.com/*
 // @include     http://www.bilibili.com/video/av*
 // @include     http://bangumi.bilibili.com/movie/*
 // @include     https://www.bilibili.com/video/av*
 // @include     https://www.bilibili.com/bangumi/play/*
 // @include     https://ani.gamer.com.tw/animeVideo.php?sn=*
-// @version     1.1
+// @version     1.2
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -43,7 +44,7 @@ class ObjectABP{
         this.height=height;
     }
 }
-class Danmaku{
+class ObjectRequest{
     constructor(href) {
         this.method = 'GET';
         this.url = href;
@@ -62,6 +63,7 @@ class Danmaku{
 var body;
 var input;
 var btn;
+var ABP_Unit;
 
 function init(){
     debug("init");
@@ -73,17 +75,33 @@ function init(){
         DisplayInput(href);
         },2000); 
     }
-    else if(window.location.href.includes("anime1.me")){
-        DisplayInput('Paste "oid link" or "sn" here.');
-        CreateButton('Press here before Open Player.',function () {
-            GM_setValue("DanmakuLink",input.value);
+    else if(window.location.href.includes("https://anime1.me")){
+        DisplayInput('https://api.bilibili.com...?oid=xxxxxx, https://ani.gamer.com.tw...?sn=xxxxxx.');
+        if(window.location.href.match(/^https:\/\/anime1\.me\/\d*$/)){
+            DisplayInput('https://api.bilibili.com...?oid=xxxxxx, https://ani.gamer.com.tw...?sn=xxxxxx, Leave blank will search.');
+        }
+        CreateButton('Load/Search Danmaku',function () {
+            if(window.location.href.match(/^https:\/\/anime1\.me\/\d*$/)&&input.value==""){
+                input.value="Searching...";
+                bahamut();
+            }
+            else{
+                GM_setValue("DanmakuLink",input.value);
+                input.value="Done, Now you can Open Player.";
+            }
         });
     }
     else if(window.location.href.includes("i.animeone.me")){
-        GetDanmaku(anime1);
+        GetDanmaku(animeone);
+    }
+    else if(window.location.href.includes("v.anime1.me")){
+        var run=function (){
+            GetDanmaku(anime1);
+        }
+        setInterval(run,10000);
     }
     else if(window.location.href.includes("video.eyny.com")) {
-        DisplayInput('Paste "oid link" or "sn" here.');
+        DisplayInput('https://api.bilibili.com...?oid=xxxxxx, https://ani.gamer.com.tw...?sn=xxxxxx');
         CreateButton(`Open Danmaku Player`,function() {GetDanmaku(eyny)});
     }
 }
@@ -101,51 +119,56 @@ function DisplayInput(href) {
     if(input==null){
     input=document.createElement("input");
     input.setAttribute("type","text");
-    input.setAttribute("value",href);
+    input.setAttribute("placeholder",href);
+    //input.setAttribute("value",href);
     input.size=80;
     body = document.querySelector('body');
     body.insertBefore(input, body.firstChild);
         
     }
     else{
-        input.value=href;
+        input.setAttribute("placeholder",href);
     }
 }
 
 function GetDanmaku(func) {
     var DanmakuLink
-    if(window.location.href.includes("i.animeone.me")){
+    if(window.location.href.includes("i.animeone.me")||window.location.href.includes("v.anime1.me")){
 
         try{
             DanmakuLink=GM_getValue("DanmakuLink");
-            DanmakuLink=DanmakuLink.match(/(https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|^(\d*)$/);
+            DanmakuLink=DanmakuLink.match(/(https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=(\d*)/);
         }
         catch(e){
-            alert("Not detect Danmaku Link.");
+            if(!window.location.href.includes("v.anime1.me")) {
+                alert("Not detect Danmaku Link.");
+            }
         }
     }
     else{
-        DanmakuLink=input.value.match(/(https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|^(\d*)$/);
+        DanmakuLink=input.value.match(/(https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=(\d*)/);
     }
     debug(DanmakuLink);
     if(DanmakuLink!=null){
         var sn;
+        //bahamut
         if(DanmakuLink[2]!=null){
             DanmakuLink=DanmakuLink[2];
             sn=DanmakuLink;
             DanmakuLink="https://ani.gamer.com.tw/ajax/danmuGet.php";
         }
+        //bilibili
         else if(DanmakuLink[1]!=null){
             DanmakuLink=DanmakuLink[1];
         }
         debug("Open Danmaku Player");
         debug(DanmakuLink);
-        var danmaku=new Danmaku(DanmakuLink);
+        var danmaku=new ObjectRequest(DanmakuLink);
         if(DanmakuLink.includes("https://ani.gamer.com.tw/ajax/danmuGet.php")){
             danmaku.method="POST";
             danmaku.data="sn="+sn;
         }
-        if(window.location.href.includes("i.animeone.me")) {
+        if(window.location.href.includes("i.animeone.me")||window.location.href.includes("v.anime1.me")) {
             GM_setValue("DanmakuLink", null);
         }
         request(danmaku,function (responseDetails) {
@@ -172,7 +195,9 @@ function GetDanmaku(func) {
         });
     }
     else {
-        alert("Not detect Danmaku Link.");
+        if(!window.location.href.includes("v.anime1.me")){
+            alert("Not detect Danmaku Link.");
+        }
     }
 
 }
@@ -182,31 +207,120 @@ function eyny(comments){
             var width=VideoContainer.style.width.match(/(\d*)/)[1];
             var height=VideoContainer.style.height.match(/(\d*)/)[1];
             var video = VideoContainer.querySelector("#mediaplayer");
+            video.style.width="100%";
+            video.style.height="100%";
+            debug("video.style.height: "+video.style.height);
             var ObjectEyny = new ObjectABP(VideoContainer, video, comments, width, height);
             ABP_Init(ObjectEyny);
+    ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
+    var ButtonFullscreen_ABP=ABP_Unit.querySelector("div.button.ABP-FullScreen");
+    ButtonFullscreen_ABP.addEventListener("click",function (){
+        debug("Fullscreen");
+        video.style.width="100%";
+        video.style.height="100%";
+        debug("video.style.height: "+video.style.height);
+    });
 }
 
-function  anime1(comments) {
+function anime1(comments){
     debug("anime1");
+    var VideoContainer = document.querySelector("#player");
+    var jw_media=VideoContainer.querySelector("div.jw-media.jw-reset");
+    var rewind=VideoContainer.querySelector("div.jw-icon.jw-icon-rewind.jw-button-color.jw-reset");
+    var display=VideoContainer.querySelector("div.jw-icon.jw-icon-display.jw-button-color.jw-reset");
+    rewind.style.display="none";
+    display.style.display="none";
+    var ButtonFullscreen_Anime1=VideoContainer.querySelector("div.jw-icon.jw-icon-inline.jw-button-color.jw-reset.jw-icon-fullscreen");
+    var video = VideoContainer.querySelector("video.jw-video.jw-reset");
+    var object = new ObjectABP(VideoContainer, video, comments, 640,360);
+    try{
+        ABP_Init(object);
+    }
+    catch(e){
+        debug("Error: "+e);
+    }
+    ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
+    VideoContainer.insertBefore(ABP_Unit,VideoContainer.firstChild);
+    var ButtonFullscreen_ABP=ABP_Unit.querySelector("div.button.ABP-FullScreen");
+    ButtonFullscreen_Anime1.addEventListener("mousedown",function (){
+        debug("Fullscreen");
+        ButtonFullscreen_ABP.click();
+    });
+    for(var Class of VideoContainer.classList){
+        VideoContainer.classList.toggle(Class,false);
+    }
+}
+
+function  animeone(comments) {
+    debug("animeone");
             var VideoContainer=document.querySelector("#player");
             var video=VideoContainer.querySelector("#player_html5_api");
             var vjs_control_bar=VideoContainer.querySelector("div.vjs-control-bar");
-            var ButtonFullscreen_Anime1=vjs_control_bar.querySelector("button.vjs-fullscreen-control.vjs-control.vjs-button");
-            var vjs_playback_rate=vjs_control_bar.querySelector("div.vjs-playback-rate.vjs-menu-button.vjs-menu-button-popup.vjs-button");
-            vjs_control_bar.removeChild(vjs_playback_rate);
-            var ObjectAnime1=new ObjectABP(VideoContainer,video,comments,640,360);
-            ABP_Init(ObjectAnime1);
+            vjs_control_bar.style.display="none";
+    var ButtonFullscreen_Animeone=vjs_control_bar.querySelector("button.vjs-fullscreen-control.vjs-control.vjs-button");
+            //var vjs_playback_rate=vjs_control_bar.querySelector("div.vjs-playback-rate.vjs-menu-button.vjs-menu-button-popup.vjs-button");
+            //vjs_control_bar.removeChild(vjs_playback_rate);
+            var ObjectAnimeone=new ObjectABP(VideoContainer,video,comments,640,360);
+            ABP_Init(ObjectAnimeone);
 
-            var ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
+            ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
             VideoContainer.insertBefore(ABP_Unit,VideoContainer.firstChild);
             var ButtonFullscreen_ABP=ABP_Unit.querySelector("div.button.ABP-FullScreen");
             ButtonFullscreen_ABP.addEventListener("click",function (){
                 debug("Fullscreen");
-                ButtonFullscreen_Anime1.click();
+                ButtonFullscreen_Animeone.click();
             });
             for(var Class of VideoContainer.classList){
                 VideoContainer.classList.toggle(Class,false);
             }
+}
+
+function bahamut(){
+    var title=document.querySelector("h1.entry-title");
+    var array=title.innerText.match(/(.*)\s\[(\d*)\]/);
+    title=array[1];
+    var EpisodeCurrent=array[2];
+    var href="https://ani.gamer.com.tw/search.php?kw="+title;
+    var search=new ObjectRequest(href);
+    request(search,function (responseDetails) {
+        var responseText=responseDetails.responseText;
+        var dom = new DOMParser().parseFromString(responseText, "text/html");
+        var anime_list=dom.querySelector("ul.anime_list");
+        if(anime_list==null||anime_list.classList.length>1){
+            input.value ="Search Result: Failed."
+            return;
+        }
+        var li=anime_list.querySelector("li");
+        var animelook=li.querySelector("a.animelook");
+        href=animelook.href;
+        href=href.replace("https://anime1.me/","https://ani.gamer.com.tw/");
+        debug(href);
+        var GetAnime=new ObjectRequest(href);
+        request(GetAnime,function (responseDetails) {
+            responseText=responseDetails.responseText;
+            dom = new DOMParser().parseFromString(responseText, "text/html");
+            var season=dom.querySelector("section.season");
+            if(season==null){
+                href=responseDetails.finalUrl;
+                debug(href);
+            }
+            else {
+                var episodes=season.querySelectorAll("li");
+                for(var episode of episodes){
+                    //debug("episode.innerHTML: "+episode.innerHTML);
+                    //debug("episode: "+parseInt(episode.innerText)+"; EpisodeCurrent: "+parseInt(EpisodeCurrent));
+                    if(parseInt(episode.innerText)==parseInt(EpisodeCurrent)){
+                        href=episode.firstChild.href;
+                        href=href.replace(window.location.href,"https://ani.gamer.com.tw/animeVideo.php");
+                        debug(href);
+                        break;
+                    }
+                }
+            }
+            input.value = "[Bahamut]"+title+EpisodeCurrent+" - "+href;
+            GM_setValue("DanmakuLink",input.value);
+        });
+    });
 }
 
 function request(object,func) {
@@ -219,14 +333,14 @@ function request(object,func) {
         overrideMimeType: object.charset,
         //synchronous: true
         onload: function (responseDetails) {
-            if (responseDetails.status != 200) {
+            if (responseDetails.status != 200&&responseDetails.status != 302) {
                 // retry
                 if (retries--) {          // *** Recurse if we still have retries
                     setTimeout(request,2000);
                     return;
                 }
             }
-            //debug(responseDetails);
+            debug(responseDetails);
             //Dowork
             func(responseDetails,object.other);
         }
