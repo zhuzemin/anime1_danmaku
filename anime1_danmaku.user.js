@@ -12,7 +12,7 @@
 // @include     https://www.bilibili.com/video/av*
 // @include     https://www.bilibili.com/bangumi/play/*
 // @include     https://ani.gamer.com.tw/animeVideo.php?sn=*
-// @version     1.2
+// @version     1.3
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -69,7 +69,14 @@ function init(){
     debug("init");
     if(window.location.href.includes("bilibili.com")){
         setInterval(function(){
-            var cid=unsafeWindow.__INITIAL_STATE__.epInfo.cid;
+            var cid;
+            if(window.location.href.includes("bangumi")){
+               cid=unsafeWindow.__INITIAL_STATE__.epInfo.cid;
+               }
+            else if(window.location.href.includes("av")){
+               cid=unsafeWindow.__INITIAL_STATE__.videoData.cid;
+                
+            }
         var href="https://api.bilibili.com/x/v1/dm/list.so?oid="+cid;
         debug("DanmakuLink: "+href);
         DisplayInput(href);
@@ -176,14 +183,14 @@ function GetDanmaku(func) {
             var comments = responseText;
             if(DanmakuLink.includes("https://ani.gamer.com.tw/ajax/danmuGet.php")){
                 debug("Comments: " + comments);
-                var json=JSON.parse(comments.replace(/(<|>){1}/g," "));
+                var json=JSON.parse(comments);
                 debug("Comments: " + comments);
                 var parser = new DOMParser();
-                var xmlDoc   = parser.parseFromString('<?xml version="1.0" encoding="utf-8"?><i></i>', "text/xml");
+                var xmlDoc   = parser.parseFromString('<?xml version="1.0" encoding="utf-8"?><i></i>', "application/xml");
                 for(var obj of Object.values( json)){
                     try{
                         var d=xmlDoc.createElement("d");
-                        d.innerHTML=obj.text;
+                        d.innerHTML=obj.text.replace(/[^\u4e00-\u9fa5`~\!@#\$%\^\*\(\)_\+\|\-=\\\{\}\[\]:";'\?,\.\/\w\d<>$]/g,"").replace(/<|>|&/g,"");
                         var p=obj.time/10+",1,25,"+parseInt(obj.color.match(/#([\d\w]{6})/)[1],16)+",1550236858,0,55f99b31,12108265626271746";
                         d.setAttribute("p",p);
                         var root=xmlDoc.getElementsByTagName("i");
@@ -191,6 +198,7 @@ function GetDanmaku(func) {
                         
                     }
                     catch(e){
+                        alert(obj.text);
                         continue;
                     }
                 }
@@ -357,7 +365,9 @@ function ABP_Init(object){
     try{
         debug("ABP Init");
         var link=document.createElement("link");
-        link.innerHTML=`<link rel="stylesheet" type="text/css" href="https://jabbany.github.io/ABPlayerHTML5/dist/css/base.min.css">`;
+        link.setAttribute("rel","stylesheet");
+        link.setAttribute("type","text/css");
+        link.setAttribute("href","https://jabbany.github.io/ABPlayerHTML5/dist/css/base.min.css");
         var head=document.querySelector("head");
         head.insertBefore(link,null);
         ABP.create(object.VideoContainer, {

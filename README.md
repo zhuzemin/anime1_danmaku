@@ -11,7 +11,7 @@ Usage:
 2: Open "anime1.me" or "video.eyny.com", Paste to Input on top.
 3: press Button next, then Open Player.
 
-*Now in anime1.me can auto search Danmaku from ani.gamer.com.tw, just leave Input blank, then click Button.
+*Now in https://anime1.me/xxxxxx can auto search Danmaku from ani.gamer.com.tw, just leave Input blank, then click Button.
 
 ![01](https://github.com/zhuzemin/anime1_danmaku/raw/master/Get Danmaku Link.jpg)
 
