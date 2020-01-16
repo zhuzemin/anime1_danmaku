@@ -12,7 +12,7 @@
 // @include     https://www.bilibili.com/video/av*
 // @include     https://www.bilibili.com/bangumi/play/*
 // @include     https://ani.gamer.com.tw/animeVideo.php?sn=*
-// @version     1.5
+// @version     1.6
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -214,7 +214,13 @@ function GetDanmaku(func) {
                             type=1;
                         }
                         else if(obj.position==2){
+                            type=4;
+                        }
+                        else if(obj.position==1){
                             type=5;
+                        }
+                        else{
+                            type=6;
                         }
                         var p=obj.time/10+","+type+",25,"+parseInt(obj.color.match(/#([\d\w]{6})/)[1],16)+",1550236858,0,55f99b31,12108265626271746";
                         d.setAttribute("p",p);
