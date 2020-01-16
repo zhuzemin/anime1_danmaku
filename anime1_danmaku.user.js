@@ -12,7 +12,7 @@
 // @include     https://www.bilibili.com/video/av*
 // @include     https://www.bilibili.com/bangumi/play/*
 // @include     https://ani.gamer.com.tw/animeVideo.php?sn=*
-// @version     1.4
+// @version     1.5
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -88,6 +88,13 @@ function init(){
         if(window.location.href.match(/^https:\/\/anime1\.me\/\d*$/)){
             DisplayInput('https://api.bilibili.com...?oid=xxxxxx, https://ani.gamer.com.tw...?sn=xxxxxx, Leave blank will search.');
         }
+        CreateButton('Search in bilibili',function () {
+            var title=document.title.split(/–|-/);
+            if(title.length==2){
+                title=title[0];
+            }
+            window.open("https://search.bilibili.com/all?keyword="+title);
+        });
         CreateButton('Load Danmaku',function () {
             if(window.location.href.match(/^https:\/\/anime1\.me\/\d*$/)&&input.value==""){
                 input.value="Searching...";
@@ -113,6 +120,13 @@ function init(){
     }
     else if(window.location.href.includes("video.eyny.com")) {
         DisplayInput('https://api.bilibili.com...?oid=xxxxxx, https://ani.gamer.com.tw...?sn=xxxxxx');
+        CreateButton('Search in bilibili',function () {
+            var title=document.title.split("-");
+            if(title.length>=2){
+                title=document.title[0];
+            }
+            window.open("https://search.bilibili.com/all?keyword="+title);
+        });
         CreateButton(`Load Danmaku`,function() {GetDanmaku(eyny)});
     }
 }
