@@ -12,7 +12,7 @@
 // @include     https://www.bilibili.com/video/av*
 // @include     https://www.bilibili.com/bangumi/play/*
 // @include     https://ani.gamer.com.tw/animeVideo.php?sn=*
-// @version     1.3
+// @version     1.4
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -80,6 +80,7 @@ function init(){
         var href="https://api.bilibili.com/x/v1/dm/list.so?oid="+cid;
         debug("DanmakuLink: "+href);
         DisplayInput(href);
+            input.value=href;
         },2000); 
     }
     else if(window.location.href.includes("https://anime1.me")){
@@ -87,14 +88,17 @@ function init(){
         if(window.location.href.match(/^https:\/\/anime1\.me\/\d*$/)){
             DisplayInput('https://api.bilibili.com...?oid=xxxxxx, https://ani.gamer.com.tw...?sn=xxxxxx, Leave blank will search.');
         }
-        CreateButton('Load/Search Danmaku',function () {
+        CreateButton('Load Danmaku',function () {
             if(window.location.href.match(/^https:\/\/anime1\.me\/\d*$/)&&input.value==""){
                 input.value="Searching...";
                 bahamut();
             }
             else{
                 GM_setValue("DanmakuLink",input.value);
-                input.value="Done, Now you can Open Player.";
+                if(input.value.match(/bilibili\.com|ani\.gamer\.com\.tw/)!=null){
+                    input.value="Done, Now you can Open Player.";
+                   
+                   }
             }
         });
     }
@@ -109,7 +113,7 @@ function init(){
     }
     else if(window.location.href.includes("video.eyny.com")) {
         DisplayInput('https://api.bilibili.com...?oid=xxxxxx, https://ani.gamer.com.tw...?sn=xxxxxx');
-        CreateButton(`Open Danmaku Player`,function() {GetDanmaku(eyny)});
+        CreateButton(`Load Danmaku`,function() {GetDanmaku(eyny)});
     }
 }
 
@@ -127,7 +131,7 @@ function DisplayInput(href) {
     input=document.createElement("input");
     input.setAttribute("type","text");
     input.setAttribute("placeholder",href);
-    //input.setAttribute("value",href);
+    input.setAttribute("onClick","this.select();");
     input.size=80;
     body = document.querySelector('body');
     body.insertBefore(input, body.firstChild);
