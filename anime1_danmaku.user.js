@@ -190,8 +190,15 @@ function GetDanmaku(func) {
                 for(var obj of Object.values( json)){
                     try{
                         var d=xmlDoc.createElement("d");
-                        d.innerHTML=obj.text.replace(/[^\u4e00-\u9fa5`~\!@#\$%\^\*\(\)_\+\|\-=\\\{\}\[\]:";'\?,\.\/\w\d<>$]/g,"").replace(/<|>|&/g,"");
-                        var p=obj.time/10+",1,25,"+parseInt(obj.color.match(/#([\d\w]{6})/)[1],16)+",1550236858,0,55f99b31,12108265626271746";
+                        d.innerHTML=obj.text.replace(/[^\u4e00-\u9fa5`~\!@#\$%\^\*\(\)_\+\|\-=\\\{\}\[\]:";'\?,\.\/\w\d<>&\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF\u2605-\u2606\u2190-\u2195\u203B]/g,"").replace("<","&lt;").replace(">","&gt;").replace("&","&amp;");
+                        var type;
+                        if(obj.position==0){
+                            type=1;
+                        }
+                        else if(obj.position==2){
+                            type=5;
+                        }
+                        var p=obj.time/10+","+type+",25,"+parseInt(obj.color.match(/#([\d\w]{6})/)[1],16)+",1550236858,0,55f99b31,12108265626271746";
                         d.setAttribute("p",p);
                         var root=xmlDoc.getElementsByTagName("i");
                         root[0].appendChild(d);
