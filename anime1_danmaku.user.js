@@ -4,9 +4,11 @@
 // @supportURL  https://github.com/zhuzemin
 // @description anime1.me / video.eyny.com 显示弹幕(bilibili.com / ani.gamer.com.tw)
 // @include     https://anime1.me/*
+// @exclude     https://anime1.me/
 // @include     https://i.animeone.me/*
 // @include     https://v.anime1.me/watch?v=*
-// @include     http://video.eyny.com/watch?v=*
+// @include     http://video.eyny.com/*
+// @exclude     http://video.eyny.com/channel/*
 // @include     http://www.bilibili.com/video/av*
 // @include     http://bangumi.bilibili.com/movie/*
 // @include     https://www.bilibili.com/video/av*
