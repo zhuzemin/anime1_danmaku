@@ -2,17 +2,16 @@
 // @name        anime1 Danmaku
 // @namespace   anime1_danmaku
 // @supportURL  https://github.com/zhuzemin
-// @description anime1 显示弹幕(bilibili.com / ani.gamer.com.tw)
+// @description anime1.me / video.eyny.com 显示弹幕(bilibili.com / ani.gamer.com.tw)
 // @include     https://anime1.me/*
 // @include     https://i.animeone.me/*
 // @include     https://v.anime1.me/watch?v=*
-// @include     http://video.eyny.com/*
+// @include     http://video.eyny.com/watch?v=*
 // @include     http://www.bilibili.com/video/av*
 // @include     http://bangumi.bilibili.com/movie/*
 // @include     https://www.bilibili.com/video/av*
 // @include     https://www.bilibili.com/bangumi/play/*
-// @include     https://ani.gamer.com.tw/animeVideo.php?sn=*
-// @version     1.6
+// @version     1.7
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -165,9 +164,6 @@ function GetDanmaku(func) {
             DanmakuLink=DanmakuLink.match(/(https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=(\d*)/);
         }
         catch(e){
-            if(!window.location.href.includes("v.anime1.me")) {
-                alert("Not detect Danmaku Link.");
-            }
         }
     }
     else{
@@ -239,12 +235,6 @@ function GetDanmaku(func) {
             func(comments);
         });
     }
-    else {
-        if(!window.location.href.includes("v.anime1.me")){
-            alert("Not detect Danmaku Link.");
-        }
-    }
-
 }
 function eyny(comments){
     debug("eyny");
@@ -363,7 +353,7 @@ function bahamut(){
                 }
             }
             input.value = "[Bahamut]"+title+EpisodeCurrent+" - "+href;
-            GM_setValue("DanmakuLink",input.value);
+            GM_setValue("DanmakuLink",href);
         });
     });
 }
@@ -412,7 +402,30 @@ function ABP_Init(object){
             },
             "width":object.width,
             "height":object.height
-        })
+        });
+var timeout;
+    var ABP_Unit=document.querySelector("div.ABP-Unit");
+    var ABP_Control=ABP_Unit.querySelector("div.ABP-Control");
+    var ABP_Text=ABP_Unit.querySelector("div.ABP-Text");
+    var ABP_Video=ABP_Unit.querySelector("div.ABP-Video");
+    ABP_Video.onmousemove=function(){
+    ABP_Control.style=" display: block;"
+    ABP_Text.style=" display: block;"
+  clearTimeout(timeout);
+    
+    timeout = setTimeout(function(){
+    ABP_Control.style=" display: none;";
+    ABP_Text.style=" display: none;";
+    },2000);
+    
+    }
+    var ButtonFullscreen_ABP=ABP_Unit.querySelector("div.button.ABP-FullScreen");
+    ButtonFullscreen_ABP.addEventListener("click",function (){
+        //ABP_Video.style.width=ABP_Unit.offsetWidth+"px";
+        setTimeout(function(){
+        ABP_Video.style.height=ABP_Unit.offsetHeight+"px";
+    },500);
+    });
     }
     catch (e) {
         debug("ABP Error: "+e);

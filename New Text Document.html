@@ -1,0 +1,53 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+
+<link rel="stylesheet" href="https://jabbany.github.io/ABPlayerHTML5/dist/css/base.min.css" />
+<script src="https://jabbany.github.io/ABPlayerHTML5/dist/vendor/CommentCoreLibrary.min.js"></script>
+    <script src="file:///C:/Dropbox/Backup/Shortcut/Batch/greasemonkey/anime1/ABPlayerHTML5.js"></script>
+</head>
+<body>
+
+
+<div id='load-player' class='abp'>
+<video id="video-1" src="file:///C:/anime/Violet%20Evergarden/[%E7%B9%81]%20%E7%B4%AB%E7%BD%97%E5%85%B0%E6%B0%B8%E6%81%92%E8%8A%B1%E5%9B%AD%20[Extra_Episode]%20-%20EYNY.mp4"></video>
+</div>
+<script>
+ABP.create(document.getElementById("load-player"), {
+  "src":{
+    "playlist":[
+      {
+        "video":document.getElementById("video-1"),
+        "comments":`<?xml version="1.0" encoding="UTF-8"?>
+
+<i><d p="0,1,25,16639293,1550236858,0,55f99b31,12108265626271746">ºž1</d><d p="0,1,25,16749718,1550236858,0,55f99b31,12108265626271746">ºž1</d><d p="0,1,25,16777215,1550236858,0,55f99b31,12108265626271746">¡­</d><d p="0,1,25,16777215,1550236858,0,55f99b31,12108265626271746">¾W¿¨</d><d p="0,1,25,16777215,1550236858,0,55f99b31,12108265626271746">0.0</d><d p="0,1,25,16777215,1550236858,0,55f99b31,12108265626271746">ºž</d><d p="0,1,25,16777215,1550236858,0,55f99b31,12108265626271746">ºž</d><d p="409.1,1,25,16777215,1550236858,0,55f99b31,12108265626271746">wwwww2222</d></i>
+`}
+    ]
+  },
+  "width":800,
+  "height":522
+});
+var timeout;
+    var ABP_Unit=document.querySelector("div.ABP-Unit");
+    var ABP_Control=ABP_Unit.querySelector("div.ABP-Control");
+    var ABP_Text=ABP_Unit.querySelector("div.ABP-Text");
+    var ABP_Video=ABP_Unit.querySelector("div.ABP-Video");
+    ABP_Video.onmousemove=function(){
+    ABP_Control.style=" display: block;"
+    ABP_Text.style=" display: block;"
+  clearTimeout(timeout);
+    
+    timeout = setTimeout(function(){
+    ABP_Control.style=" display: none;";
+    ABP_Text.style=" display: none;";
+    },2000);
+    
+    }
+    var ButtonFullscreen_ABP=ABP_Unit.querySelector("div.button.ABP-FullScreen");
+    ButtonFullscreen_ABP.addEventListener("click",function (){
+        ABP_Video.style.width=ABP_Unit.offsetWidth+"px";
+        ABP_Video.style.height=ABP_Unit.offsetHeight+"px";
+    });</script>
+
+</body>
+</html>
