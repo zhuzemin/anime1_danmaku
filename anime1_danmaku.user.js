@@ -427,8 +427,9 @@ function bilibili() {
     request(search,function (responseDetails) {
         var responseText=responseDetails.responseText;
         var dom = new DOMParser().parseFromString(responseText, "text/html");
-        var bangumi_item=dom.querySelector("li.bangumi-item");
-        if(bangumi_item==null||bangumi_item.classList.length>1){
+        var bangumi_items=dom.querySelectorAll("li.bangumi-item");
+        var bangumi_item=bangumi_items[bangumi_items.length-1];
+        if(bangumi_item==null){
             SearchResult ="Search Result: [Bilibili] Failed."
             InsertOption( SearchResult);
         }
