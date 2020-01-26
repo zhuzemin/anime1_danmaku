@@ -13,7 +13,7 @@
 // @include     http://bangumi.bilibili.com/movie/*
 // @include     https://www.bilibili.com/video/av*
 // @include     https://www.bilibili.com/bangumi/play/*
-// @version     1.8
+// @version     1.81
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -100,7 +100,7 @@ function init(){
                 bahamut();
             }
             else{
-                if(input.value.match(/bilibili\.com|ani\.gamer\.com\.tw/)!=null){
+                if(input.value.match(/bilibili\.com|ani\.gamer\.com\.tw/g)!=null){
                     input.value="Done, Now you can Open Player.";
                    
                    }
@@ -362,7 +362,7 @@ function bahamut(){
                     for (var episode of episodes) {
                         //debug("episode.innerHTML: "+episode.innerHTML);
                         //debug("episode: "+parseInt(episode.innerText)+"; EpisodeCurrent: "+parseInt(EpisodeCurrent));
-                        if (parseInt(episode.innerText) == parseInt(EpisodeCurrent)) {
+                        if (parseInt(episode.innerText.match(/(\d*)/g)[1]) == parseInt(EpisodeCurrent)) {
                             href = episode.firstChild.href;
                             href = href.replace(window.location.href, "https://ani.gamer.com.tw/animeVideo.php");
                             debug(href);
@@ -444,7 +444,7 @@ function bilibili() {
                         debug(__INITIAL_STATE__);
                         var cid;
                         for(var epInfo of __INITIAL_STATE__.epList){
-                            if(parseInt(epInfo.title) == parseInt(EpisodeCurrent)){
+                            if(parseInt(epInfo.title.match(/(\d*)/g)[1]) == parseInt(EpisodeCurrent)){
                                 cid=epInfo.cid;
                                 var href="https://api.bilibili.com/x/v1/dm/list.so?oid="+cid;
                                 SearchResult = "Search Result: [Bilibili] "+title+EpisodeCurrent+" - "+href;
