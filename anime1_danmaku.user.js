@@ -13,7 +13,7 @@
 // @include     http://bangumi.bilibili.com/movie/*
 // @include     https://www.bilibili.com/video/av*
 // @include     https://www.bilibili.com/bangumi/play/*
-// @version     1.81
+// @version     1.9
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -87,23 +87,23 @@ function init(){
         },2000); 
     }
     else if(window.location.href.includes("https://anime1.me")){
-        DisplayInput('https://api.bilibili.com...?oid=xxxxxx, https://ani.gamer.com.tw...?sn=xxxxxx.');
+        //DisplayInput('https://api.bilibili.com...?oid=xxxxxx, https://ani.gamer.com.tw...?sn=xxxxxx.');
         if(window.location.href.match(/^https:\/\/anime1\.me\/\d*$/)){
             DisplayInput('https://api.bilibili.com...?oid=xxxxxx, https://ani.gamer.com.tw...?sn=xxxxxx, Leave blank will search.');
         }
-        CreateButton('Search in bilibili',function () {
+        /*CreateButton('Search in bilibili',function () {
             SearchBilibili();
-        });
+        });*/
         CreateButton('Load Danmaku',function () {
             if(window.location.href.match(/^https:\/\/anime1\.me\/\d*$/)&&input.value==""){
                 input.value="Searching...";
                 bahamut();
             }
             else{
-                if(input.value.match(/bilibili\.com|ani\.gamer\.com\.tw/g)!=null){
+                if(input.value.match(/(api\.bilibili\.com)|(ani\.gamer\.com\.tw)/)!=null) {
+                    GM_setValue("DanmakuLink", input.value);
                     input.value="Done, Now you can Open Player.";
-                   
-                   }
+                }
             }
         });
     }
@@ -139,6 +139,32 @@ function CreateButton(text,func){
     body.insertBefore(btn, input.nextElementSibling);
 }
 
+function toggleFullScreen() {
+    if (!document.fullscreenElement &&    // alternative standard method
+        !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement ) {  // current working methods
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen();
+        } else if (document.documentElement.msRequestFullscreen) {
+            document.documentElement.msRequestFullscreen();
+        } else if (document.documentElement.mozRequestFullScreen) {
+            document.documentElement.mozRequestFullScreen();
+        } else if (document.documentElement.webkitRequestFullscreen) {
+            document.documentElement.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+        }
+    }
+    else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
+    }
+}
+
 function DisplayInput(href) {
     if(input==null){
     input=document.createElement("input");
@@ -146,16 +172,13 @@ function DisplayInput(href) {
     input.setAttribute("placeholder",href);
     input.setAttribute("onClick","this.select();");
     input.setAttribute("onfocus","this.value='';");
-    input.size=80;
+    input.size=100;
     input.style=`
         background-image:    url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAA3klEQVRIS+3VMU9CMRTF8d8zBL+aizoQFhx0kUk33RzdYMNFXUFnYeGrYYyaJiUxJHDLSxodbNKpfeffc9/pbaPyaCrr+3OA++z4rtT5Pg5GuMnCY9yWQEoBE1xhlUUP8YDrCBIB0vojLvGO0yz4hm4JJAKcYYoPHGOZAUdYoIMBXrc5iQAHeMlzviFygj7O8dkWEJU4XI8chALRhn9AVKHf70VRTHu4wFfbmKZLNKt50dLBnna0imcMd/2I0phWa3Y/D1e1Xa9BCZJG0VuQNpaWKMx72xS1Fl5/WN3BN+AgJhnZQlq4AAAAAElFTkSuQmCC');
         background-position: calc(100% - .5rem), 100% 0;
         background-size:  1.5em 1.5em;
         background-repeat: no-repeat;
         `;
-    input.addEventListener('change',function(){
-        GM_setValue("DanmakuLink",input.value);
-    });
     body = document.querySelector('body');
     body.insertBefore(input, body.firstChild);
         
@@ -174,6 +197,7 @@ function GetDanmaku(func) {
             DanmakuLink=DanmakuLink.match(/(https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=(\d*)/);
         }
         catch(e){
+            //debug("Error: ", e);
         }
     }
     else{
@@ -252,31 +276,28 @@ function eyny(comments){
             var width=VideoContainer.style.width.match(/(\d*)/)[1];
             var height=VideoContainer.style.height.match(/(\d*)/)[1];
             var video = VideoContainer.querySelector("#mediaplayer");
-            video.style.width="100%";
-            video.style.height="100%";
-            debug("video.style.height: "+video.style.height);
             var ObjectEyny = new ObjectABP(VideoContainer, video, comments, width, height);
             ABP_Init(ObjectEyny);
     ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
     var ButtonFullscreen_ABP=ABP_Unit.querySelector("div.button.ABP-FullScreen");
-    ButtonFullscreen_ABP.addEventListener("click",function (){
-        debug("Fullscreen");
-        video.style.width="100%";
-        video.style.height="100%";
-        debug("video.style.height: "+video.style.height);
+    ButtonFullscreen_ABP.addEventListener("click",function () {
+        setTimeout(function () {
+            debug("Fullscreen");
+            video.style="width:100%!important; height:100%!important;"
+            debug("video.style.height: " + video.style.height);
+
+        },500);
     });
 }
 
 function anime1(comments){
     debug("anime1");
     var VideoContainer = document.querySelector("#player");
-    var jw_media=VideoContainer.querySelector("div.jw-media.jw-reset");
+    var video = VideoContainer.querySelector("video.jw-video.jw-reset");
     var rewind=VideoContainer.querySelector("div.jw-icon.jw-icon-rewind.jw-button-color.jw-reset");
     var display=VideoContainer.querySelector("div.jw-icon.jw-icon-display.jw-button-color.jw-reset");
     rewind.style.display="none";
     display.style.display="none";
-    var ButtonFullscreen_Anime1=VideoContainer.querySelector("div.jw-icon.jw-icon-inline.jw-button-color.jw-reset.jw-icon-fullscreen");
-    var video = VideoContainer.querySelector("video.jw-video.jw-reset");
     var object = new ObjectABP(VideoContainer, video, comments, 640,360);
     try{
         ABP_Init(object);
@@ -287,6 +308,7 @@ function anime1(comments){
     ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
     VideoContainer.insertBefore(ABP_Unit,VideoContainer.firstChild);
     var ButtonFullscreen_ABP=ABP_Unit.querySelector("div.button.ABP-FullScreen");
+    var ButtonFullscreen_Anime1=VideoContainer.querySelector("div.jw-icon.jw-icon-inline.jw-button-color.jw-reset.jw-icon-fullscreen");
     ButtonFullscreen_Anime1.addEventListener("mousedown",function (){
         debug("Fullscreen");
         ButtonFullscreen_ABP.click();
@@ -300,21 +322,15 @@ function  animeone(comments) {
     debug("animeone");
             var VideoContainer=document.querySelector("#player");
             var video=VideoContainer.querySelector("#player_html5_api");
-            var vjs_control_bar=VideoContainer.querySelector("div.vjs-control-bar");
-            vjs_control_bar.style.display="none";
-    var ButtonFullscreen_Animeone=vjs_control_bar.querySelector("button.vjs-fullscreen-control.vjs-control.vjs-button");
-            //var vjs_playback_rate=vjs_control_bar.querySelector("div.vjs-playback-rate.vjs-menu-button.vjs-menu-button-popup.vjs-button");
-            //vjs_control_bar.removeChild(vjs_playback_rate);
             var ObjectAnimeone=new ObjectABP(VideoContainer,video,comments,640,360);
             ABP_Init(ObjectAnimeone);
 
             ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
-            VideoContainer.insertBefore(ABP_Unit,VideoContainer.firstChild);
-            var ButtonFullscreen_ABP=ABP_Unit.querySelector("div.button.ABP-FullScreen");
-            ButtonFullscreen_ABP.addEventListener("click",function (){
-                debug("Fullscreen");
-                ButtonFullscreen_Animeone.click();
-            });
+    for(var Node of VideoContainer.childNodes) {
+        if (Node != ABP_Unit) {
+            Node.style.display = "none";
+        }
+    }
             for(var Class of VideoContainer.classList){
                 VideoContainer.classList.toggle(Class,false);
             }
@@ -362,17 +378,17 @@ function bahamut(){
                     for (var episode of episodes) {
                         //debug("episode.innerHTML: "+episode.innerHTML);
                         //debug("episode: "+parseInt(episode.innerText)+"; EpisodeCurrent: "+parseInt(EpisodeCurrent));
-                        if (parseInt(episode.innerText.match(/(\d*)/g)[1]) == parseInt(EpisodeCurrent)) {
+                        if (parseInt(episode.innerText.match(/(\d{1,4})/)[1]) == parseInt(EpisodeCurrent)) {
                             href = episode.firstChild.href;
                             href = href.replace(window.location.href, "https://ani.gamer.com.tw/animeVideo.php");
                             debug(href);
+                            SearchResult = "Search Result: [Bahamut] " + title + EpisodeCurrent + " - " + href;
+                            InsertOption( SearchResult);
+                            bilibili();
                             break;
                         }
                     }
                 }
-                SearchResult = "Search Result: [Bahamut] " + title + EpisodeCurrent + " - " + href;
-                InsertOption( SearchResult);
-                bilibili();
             });
         }
     });
@@ -384,6 +400,9 @@ function InsertOption(value) {
     datalist.insertBefore(option,null);
     if(!value.includes("Failed")&&!input.value.includes("Bahamut")){
         input.value = value;
+        if(input.value.match(/(api\.bilibili\.com)|(ani\.gamer\.com\.tw)/)!=null) {
+            GM_setValue("DanmakuLink", input.value);
+        }
     }
     else  if(value.includes("Failed")&&input.value==""){
         input.value = "Search Result: Failed.";
@@ -445,7 +464,8 @@ function bilibili() {
                         debug(__INITIAL_STATE__);
                         var cid;
                         for(var epInfo of __INITIAL_STATE__.epList){
-                            if(parseInt(epInfo.title.match(/(\d*)/g)[1]) == parseInt(EpisodeCurrent)){
+                            //debug(parseInt(epInfo.title.match(/(\d{1,4})/)[1])+" & "+parseInt(EpisodeCurrent));
+                            if(parseInt(epInfo.title.match(/(\d{1,4})/)[1]) == parseInt(EpisodeCurrent)){
                                 cid=epInfo.cid;
                                 var href="https://api.bilibili.com/x/v1/dm/list.so?oid="+cid;
                                 SearchResult = "Search Result: [Bilibili] "+title+EpisodeCurrent+" - "+href;
@@ -522,6 +542,7 @@ var timeout;
     }
     var ButtonFullscreen_ABP=ABP_Unit.querySelector("div.button.ABP-FullScreen");
     ButtonFullscreen_ABP.addEventListener("click",function (){
+        toggleFullScreen();
         //ABP_Video.style.width=ABP_Unit.offsetWidth+"px";
         setTimeout(function(){
         ABP_Video.style.height=ABP_Unit.offsetHeight+"px";
