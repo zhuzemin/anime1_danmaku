@@ -13,7 +13,7 @@
 // @include     http://bangumi.bilibili.com/movie/*
 // @include     https://www.bilibili.com/video/av*
 // @include     https://www.bilibili.com/bangumi/play/*
-// @version     1.9
+// @version     2.0
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -62,12 +62,8 @@ class ObjectRequest{
     }
 }
 
-var body;
 var input;
-var btn;
-var ABP_Unit;
 var datalist;
-
 function init(){
     debug("init");
     if(window.location.href.includes("bilibili.com")){
@@ -131,12 +127,13 @@ function SearchBilibili() {
 }
 
 function CreateButton(text,func){
-    btn=document.createElement("button");
+    var btn=document.createElement("button");
     btn.type="button";
     btn.onclick="";
     btn.innerHTML=text;
     btn.addEventListener('click',func);
-    body.insertBefore(btn, input.nextElementSibling);
+    input.parentElement.insertBefore(btn, null);
+    //body.insertBefore(btn, input.nextElementSibling);
 }
 
 function toggleFullScreen() {
@@ -167,20 +164,16 @@ function toggleFullScreen() {
 
 function DisplayInput(href) {
     if(input==null){
+        var div=document.createElement("div");
     input=document.createElement("input");
+    input.id="InputDanmaku";
     input.setAttribute("type","text");
     input.setAttribute("placeholder",href);
     input.setAttribute("onClick","this.select();");
-    input.setAttribute("onfocus","this.value='';");
     input.size=100;
-    input.style=`
-        background-image:    url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAA3klEQVRIS+3VMU9CMRTF8d8zBL+aizoQFhx0kUk33RzdYMNFXUFnYeGrYYyaJiUxJHDLSxodbNKpfeffc9/pbaPyaCrr+3OA++z4rtT5Pg5GuMnCY9yWQEoBE1xhlUUP8YDrCBIB0vojLvGO0yz4hm4JJAKcYYoPHGOZAUdYoIMBXrc5iQAHeMlzviFygj7O8dkWEJU4XI8chALRhn9AVKHf70VRTHu4wFfbmKZLNKt50dLBnna0imcMd/2I0phWa3Y/D1e1Xa9BCZJG0VuQNpaWKMx72xS1Fl5/WN3BN+AgJhnZQlq4AAAAAElFTkSuQmCC');
-        background-position: calc(100% - .5rem), 100% 0;
-        background-size:  1.5em 1.5em;
-        background-repeat: no-repeat;
-        `;
-    body = document.querySelector('body');
-    body.insertBefore(input, body.firstChild);
+    div.insertBefore(input,null);
+    var body = document.querySelector('body');
+    body.insertBefore(div, body.firstChild);
         
     }
     else{
@@ -278,7 +271,7 @@ function eyny(comments){
             var video = VideoContainer.querySelector("#mediaplayer");
             var ObjectEyny = new ObjectABP(VideoContainer, video, comments, width, height);
             ABP_Init(ObjectEyny);
-    ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
+    var ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
     var ButtonFullscreen_ABP=ABP_Unit.querySelector("div.button.ABP-FullScreen");
     ButtonFullscreen_ABP.addEventListener("click",function () {
         setTimeout(function () {
@@ -305,7 +298,7 @@ function anime1(comments){
     catch(e){
         debug("Error: "+e);
     }
-    ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
+    var ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
     VideoContainer.insertBefore(ABP_Unit,VideoContainer.firstChild);
     var ButtonFullscreen_ABP=ABP_Unit.querySelector("div.button.ABP-FullScreen");
     var ButtonFullscreen_Anime1=VideoContainer.querySelector("div.jw-icon.jw-icon-inline.jw-button-color.jw-reset.jw-icon-fullscreen");
@@ -325,7 +318,7 @@ function  animeone(comments) {
             var ObjectAnimeone=new ObjectABP(VideoContainer,video,comments,640,360);
             ABP_Init(ObjectAnimeone);
 
-            ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
+            var ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
     for(var Node of VideoContainer.childNodes) {
         if (Node != ABP_Unit) {
             Node.style.display = "none";
@@ -345,10 +338,12 @@ function bahamut(){
     var search=new ObjectRequest(href);
     var SearchResult;
 
-    datalist = document.createElement("datalist");
-    datalist.id = "result";
-    input.parentElement.insertBefore(datalist, null);
-    input.setAttribute("list", "result");
+    if(datalist==null) {
+        datalist = document.createElement("datalist");
+        datalist.id = "result";
+        input.parentElement.insertBefore(datalist, null);
+        input.setAttribute("list", "result");
+    }
     request(search,function (responseDetails) {
         var responseText=responseDetails.responseText;
         var dom = new DOMParser().parseFromString(responseText, "text/html");
@@ -451,6 +446,7 @@ function bilibili() {
         if(bangumi_item==null){
             SearchResult ="Search Result: [Bilibili] Failed."
             InsertOption( SearchResult);
+            InsertDropDown();
         }
         else {
             href=bangumi_item.querySelector("a").href;
@@ -470,6 +466,7 @@ function bilibili() {
                                 var href="https://api.bilibili.com/x/v1/dm/list.so?oid="+cid;
                                 SearchResult = "Search Result: [Bilibili] "+title+EpisodeCurrent+" - "+href;
                                 InsertOption( SearchResult);
+                                InsertDropDown();
                                 break;
                             }
 
@@ -478,6 +475,16 @@ function bilibili() {
             }
     });
     
+}
+
+function InsertDropDown() {
+    input.setAttribute("onfocus","this.value='';");
+    input.style=`
+        background-image:    url('data:image/png;base64,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');
+        background-position: calc(100% - .5rem), 100% 0;
+        background-size:  1.5em 1.5em;
+        background-repeat: no-repeat;
+        `;
 }
 function request(object,func) {
     var retries = 10;
