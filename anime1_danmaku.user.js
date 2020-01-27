@@ -442,18 +442,18 @@ function bilibili() {
         var responseText=responseDetails.responseText;
         var dom = new DOMParser().parseFromString(responseText, "text/html");
         var bangumi_items=dom.querySelectorAll("li.bangumi-item");
-        var bangumi_item;
-        for(bangumi_item of bangumi_items){
-            if(!(bangumi_item.querySelector("a.title").getAttribute("title").includes("僅限"))){
-                break;
-            }
-        }
-        if(bangumi_item==null){
+        if(bangumi_items.length==0){
             SearchResult ="Search Result: [Bilibili] Failed."
             InsertOption( SearchResult);
             InsertDropDown();
         }
         else {
+            var bangumi_item;
+            for(bangumi_item of bangumi_items){
+                if(!(bangumi_item.querySelector("a.title").getAttribute("title").includes("僅限"))||bangumi_items.length==1){
+                    break;
+                }
+            }
             href=bangumi_item.querySelector("a").href;
                     var GetAnime=new ObjectRequest(href);
                     request(GetAnime,function (responseDetails) {
