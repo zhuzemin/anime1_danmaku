@@ -58,10 +58,10 @@ function setUserPref(varName, defaultVal, menuText, promtText, sep){
 
 // prepare UserPrefs
 setUserPref(
-    'ScrollDanmakuSpeed',
+    'DanmakuSpeed',
     '100',
-    'Set Scroll Danmaku Speed',
-    `Enter percentage of speed for Scroll Danmaku, (100-200%), More larger more slowly, default: 100.`,
+    'Set Danmaku speed',
+    `Enter percentage of speed for Danmaku, (100-200%), more larger more slowly, default: 100.`,
     ','
 );
 
@@ -572,13 +572,13 @@ function request(object,func) {
 function ABP_Init(object){
     try{
         debug("ABP Init");
-        var ScrollDanmakuSpeed;
+        var DanmakuSpeed;
         try{
-            ScrollDanmakuSpeed=parseInt(GM_getValue("ScrollDanmakuSpeed").trim());
+            DanmakuSpeed=parseInt(GM_getValue("DanmakuSpeed").trim());
         }catch(e){
             debug("Not set GM_Value.");
         }
-        debug("ScrollDanmakuSpeed: " + ScrollDanmakuSpeed);
+        debug("DanmakuSpeed: " + DanmakuSpeed);
         var link=document.createElement("link");
         link.setAttribute("rel","stylesheet");
         link.setAttribute("type","text/css");
@@ -635,10 +635,10 @@ function ABP_Init(object){
                 clearTimeout(timeout);
         }
     });
-        if (ScrollDanmakuSpeed != undefined&&ScrollDanmakuSpeed!=NaN&&ScrollDanmakuSpeed>=100) {
-            debug("ScrollDanmakuSpeed: " + ScrollDanmakuSpeed);
+        if (DanmakuSpeed != undefined&&DanmakuSpeed!=NaN&&DanmakuSpeed>=100) {
+            debug("DanmakuSpeed: " + DanmakuSpeed);
             var ABP_Text_Input=ABP_Text.querySelector("input");
-            ABP_Text_Input.value="!DmkSpd:"+ScrollDanmakuSpeed;
+            ABP_Text_Input.value="!DmkSpd:"+DanmakuSpeed;
             ABP_Text_Input.click();
         }
     }
