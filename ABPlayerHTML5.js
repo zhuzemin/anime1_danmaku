@@ -63,7 +63,13 @@ var CommentLoader = (function () {
   };
 
   CommentLoader.prototype.load = function (method, url) {
-    return new Promise(function(resolve, reject){resolve(    (new DOMParser()).parseFromString(url, 'text/xml'))}).then((function (data) {
+    return new Promise(
+    	function(resolve, reject){
+    		resolve(
+    			(new DOMParser()).parseFromString(url, 'text/xml')
+			)
+    	}
+    	).then((function (data) {
       return this._parser.parseMany(data);
     }).bind(this)).then((function (comments) {
         this._commentManager.load(comments);
@@ -150,7 +156,7 @@ var CommentLoader = (function () {
  		return r;
  	}
  	
- 	
+
  	ABP.create = function (element, params) {
  		var elem = element;
  		if(!params){
@@ -224,12 +230,12 @@ var CommentLoader = (function () {
  		}
  		container.appendChild(_("div",{
  				"className" : "ABP-Video",
- 				"tabindex" : "10"	
+ 				"tabindex" : "10"
  			}, [_("div", {
  					"className":"ABP-Container"
  				}),
  				playlist[0]
- 		]));		
+ 		]));
  		container.appendChild(_("div", {
  					"className":"ABP-Text",
  			},[
@@ -293,7 +299,7 @@ var CommentLoader = (function () {
  		}
  		return bind;
  	}
- 	
+
  	ABP.load = function (inst, videoProvider, commentProvider, commentReceiver){
  		// 
  	};
@@ -660,6 +666,108 @@ var CommentLoader = (function () {
  		}
  		/** Bind command interface **/
  		if(ABPInst.txtText !== null){
+            ABPInst.txtText.addEventListener("click", function(k){
+                if(this.value == null) return;
+                if(/^!/.test(this.value)){
+                    this.style.color = "#5DE534";
+                }else{
+                    this.style.color = "";
+                }
+                if(/^!/.test(this.value)){
+                    /** Execute command **/
+                    var commandPrompts = this.value.substring(1).split(":");
+                    var command = commandPrompts.shift();
+                    switch (command){
+                        case "help":{
+                            if(commandPrompts.length < 1){
+                                ABPInst.createPopup("提示信息：", 2000);
+                            }else{
+                            	var delay;
+                            	if(commandPrompts.length==2&&typeof parseInt(commandPrompts[1])=="number"){
+                                    delay=parseInt(commandPrompts[1]);
+								}
+								else {
+                            		delay=2000;
+								}
+                                var popup = ABPInst.createPopup(commandPrompts[0],delay);
+                                if(ABPInst.cmManager !== null){
+                                    ABPInst.cmManager.clear();
+                                }
+                            }
+                        }break;
+                        case "speed":
+                        case "rate":
+                        case "spd":{
+                            if(commandPrompts.length < 1){
+                                ABPInst.createPopup("速度调节：输入百分比【 1% - 300% 】", 2000);
+                            }else{
+                                var pct = parseInt(commandPrompts[0]);
+                                if(pct != NaN){
+                                    var percentage = Math.min(Math.max(pct, 1), 300);
+                                    ABPInst.video.playbackRate = percentage / 100;
+                                }
+                                if(ABPInst.cmManager !== null){
+                                    ABPInst.cmManager.clear();
+                                }
+                            }
+                        }break;
+                        case "DmkSpd":{
+                            if(commandPrompts.length < 1){
+                                ABPInst.createPopup("弹幕速度调节：输入百分比【 100% - 200% 】", 2000);
+                            }else{
+                                var pct = parseInt(commandPrompts[0]);
+                                if(pct != NaN){
+                                    var percentage = Math.min(Math.max(pct, 100), 200);
+                                    ABPInst.cmManager.options.scroll.scale = percentage/100;
+                                }
+                                if(ABPInst.cmManager !== null){
+                                    ABPInst.cmManager.clear();
+                                }
+                            }
+                        }break;
+                        case "off":{
+                            ABPInst.cmManager.display = false;
+                            ABPInst.cmManager.clear();
+                            ABPInst.cmManager.stop();
+                        }break;
+                        case "on":{
+                            ABPInst.cmManager.display = true;
+                            ABPInst.cmManager.start();
+                        }break;
+                        case "cls":
+                        case "clear":{
+                            if(ABPInst.cmManager !== null){
+                                ABPInst.cmManager.clear();
+                            }
+                        }break;
+                        case "pp":
+                        case "pause":{
+                            ABPInst.video.pause();
+                        }break;
+                        case "p":
+                        case "play":{
+                            ABPInst.video.play();
+                        }break;
+                        case "vol":
+                        case "volume":{
+                            if(commandPrompts.length == 0){
+                                var popup = ABPInst.createPopup("目前音量：" +
+                                    Math.round(ABPInst.video.volume * 100) + "%", 2000);
+                            }else{
+                                var precVolume = parseInt(commandPrompts[0]);
+                                if(precVolume !== null && precVolume !== NaN){
+                                    ABPInst.video.volume = Math.max(Math.min(precVolume, 100),0) / 100;
+                                }
+                                ABPInst.createPopup("目前音量：" +
+                                    Math.round(ABPInst.video.volume * 100) + "%", 2000);
+                            }
+                        }break;
+                        default:break;
+                    }
+                    this.value = "";
+                }
+
+			});
  			ABPInst.txtText.addEventListener("keyup", function(k){
  				if(this.value == null) return;
  				if(/^!/.test(this.value)){
@@ -693,6 +801,20 @@ var CommentLoader = (function () {
  									}
  								}
  							}break;
+                            case "DmkSpd":{
+                                if(commandPrompts.length < 1){
+                                    ABPInst.createPopup("弹幕速度调节：输入百分比【 100% - 200% 】", 2000);
+                                }else{
+                                    var pct = parseInt(commandPrompts[0]);
+                                    if(pct != NaN){
+                                        var percentage = Math.min(Math.max(pct, 100), 200);
+                                        ABPInst.cmManager.options.scroll.scale = percentage/100;
+                                    }
+                                    if(ABPInst.cmManager !== null){
+                                        ABPInst.cmManager.clear();
+                                    }
+                                }
+                            }break;
  							case "off":{
  								ABPInst.cmManager.display = false;
  								ABPInst.cmManager.clear();
