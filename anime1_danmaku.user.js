@@ -13,7 +13,7 @@
 // @include     http://bangumi.bilibili.com/movie/*
 // @include     https://www.bilibili.com/video/av*
 // @include     https://www.bilibili.com/bangumi/play/*
-// @version     2.0
+// @version     2.1
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -266,8 +266,8 @@ function GetDanmaku(func) {
 function eyny(comments){
     debug("eyny");
             var VideoContainer = document.querySelector("#video_container");
-            var width=VideoContainer.style.width.match(/(\d*)/)[1];
-            var height=VideoContainer.style.height.match(/(\d*)/)[1];
+            var width=VideoContainer.style.width.match(/(\d{1,4})/)[1];
+            var height=VideoContainer.style.height.match(/(\d{1,4})/)[1];
             var video = VideoContainer.querySelector("#mediaplayer");
             var ObjectEyny = new ObjectABP(VideoContainer, video, comments, width, height);
             ABP_Init(ObjectEyny);
@@ -442,7 +442,12 @@ function bilibili() {
         var responseText=responseDetails.responseText;
         var dom = new DOMParser().parseFromString(responseText, "text/html");
         var bangumi_items=dom.querySelectorAll("li.bangumi-item");
-        var bangumi_item=bangumi_items[bangumi_items.length-1];
+        var bangumi_item;
+        for(bangumi_item of bangumi_items){
+            if(!(bangumi_item.querySelector("a.title").getAttribute("title").includes("僅限"))){
+                break;
+            }
+        }
         if(bangumi_item==null){
             SearchResult ="Search Result: [Bilibili] Failed."
             InsertOption( SearchResult);
@@ -461,16 +466,23 @@ function bilibili() {
                         var cid;
                         for(var epInfo of __INITIAL_STATE__.epList){
                             //debug(parseInt(epInfo.title.match(/(\d{1,4})/)[1])+" & "+parseInt(EpisodeCurrent));
-                            if(parseInt(epInfo.title.match(/(\d{1,4})/)[1]) == parseInt(EpisodeCurrent)){
-                                cid=epInfo.cid;
-                                var href="https://api.bilibili.com/x/v1/dm/list.so?oid="+cid;
-                                SearchResult = "Search Result: [Bilibili] "+title+EpisodeCurrent+" - "+href;
-                                InsertOption( SearchResult);
-                                InsertDropDown();
-                                break;
+                            if(epInfo.title.match(/(\d{1,4})/)!=null){
+                                if(parseInt(epInfo.title.match(/(\d{1,4})/)[1]) == parseInt(EpisodeCurrent)){
+                                    cid=epInfo.cid;
+                                    var href="https://api.bilibili.com/x/v1/dm/list.so?oid="+cid;
+                                    SearchResult = "Search Result: [Bilibili] "+title+EpisodeCurrent+" - "+href;
+                                    break;
+                                }
+
+                            }
+                            else if(epInfo==__INITIAL_STATE__.epList[__INITIAL_STATE__.epList.length-1]){
+                                SearchResult ="Search Result: [Bilibili] Failed."
+
                             }
 
                         }
+                        InsertOption( SearchResult);
+                        InsertDropDown();
                     });
             }
     });
