@@ -13,7 +13,7 @@
 <video id="video-1" src="file:///C:/anime/Violet%20Evergarden/[%E7%B9%81]%20%E7%B4%AB%E7%BD%97%E5%85%B0%E6%B0%B8%E6%81%92%E8%8A%B1%E5%9B%AD%20[Extra_Episode]%20-%20EYNY.mp4"></video>
 </div>
 <script>
-ABP.create(document.getElementById("load-player"), {
+var abp=ABP.create(document.getElementById("load-player"), {
   "src":{
     "playlist":[
       {
@@ -27,6 +27,8 @@ ABP.create(document.getElementById("load-player"), {
   "width":800,
   "height":522
 });
+//setTimeout(function(){alert(abp.video.currentTime);},10000);
+abp.cmManager.options.scroll.scale=2;
 var timeout;
     var ABP_Unit=document.querySelector("div.ABP-Unit");
     var ABP_Control=ABP_Unit.querySelector("div.ABP-Control");
