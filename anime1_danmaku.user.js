@@ -13,7 +13,7 @@
 // @include     http://bangumi.bilibili.com/movie/*
 // @include     https://www.bilibili.com/video/av*
 // @include     https://www.bilibili.com/bangumi/play/*
-// @version     2.4
+// @version     2.5
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -32,10 +32,10 @@ var BinArray=function(){var t={};return t.bsearch=function(t,e,r){if(!Array.isAr
 
 
 function isMobile(){var e,t=!1;return e=navigator.userAgent||navigator.vendor||window.opera,(/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(e)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(e.substr(0,4)))&&(t=!0),t}var CommentLoader=function(){function t(){this.parseOne=function(){throw new Error("Not Implemented")},this.parseMany=function(){throw new Error("Not Implemented")}}function e(e){this._commentManager=e,this._responseType="text/xml",this._parser=new t}var a=["text/xml","text/plain","application/json"];return e.prototype.setParser=function(e){return this._parser=e,this},e.prototype.setType=function(e){if(a.indexOf(e)<0)throw new Error("Unknown type: "+e);return this._responseType=e,this},e.prototype._fetch=function(e,t){return fetch(t,{method:e}).then(function(e){if(!e.ok)throw new Error("HTTP error, status = "+e.status);if("application/json"===this._responseType)return e.json();if("text/plain"===this._responseType)return e.text();if("text/xml"===this._responseType)return e.text().then(function(e){return(new DOMParser).parseFromString(e,this._responseType)}.bind(this));throw new Error("Unrecognized response type")}.bind(this))},e.prototype.load=function(e,a){return new Promise(function(e,t){e((new DOMParser).parseFromString(a,"text/xml"))}).then(function(e){return this._parser.parseMany(e)}.bind(this)).then(function(e){this._commentManager.load(e)}.bind(this)).catch(function(e){alert(e)})},e}(),ABP={version:"0.8.0"};!function(){"use strict";if(ABP){var x=function(e,t,a,n){var i=null;if("text"===e)return document.createTextNode(t);for(var r in i=document.createElement(e),t)if("style"!==r&&"className"!==r)i.setAttribute(r,t[r]);else if("className"===r)i.className=t[r];else for(var o in t.style)i.style[o]=t.style[o];if(a)for(var s=0;s<a.length;s++)null!=a[s]&&i.appendChild(a[s]);return n&&"function"==typeof n&&n(i),i},P=function(e,t){return null!=e&&0<=e.className.split(" ").indexOf(t)},B=function(e,t){var a={};for(var n in t)e&&void 0!==e[n]?a[n]=e[n]:a[n]=t[n];return a};ABP.create=function(e,t){var a,n=e;if(t=B(t=t||{},{replaceMode:!0,width:512,height:384,src:"",mobile:!1}),"string"==typeof e&&(a=e,n=document.getElementById(a)),P(n,"ABP-Unit"))i=n;else{var i=x("div",{className:"ABP-Unit",style:{width:t.width+"px",height:t.height+"px"}});n.appendChild(i)}0<i.children.length&&t.replaceMode&&(i.innerHTML="");var r=[],o=[];if("string"==typeof t.src)t.src=x("video",{autobuffer:"true",dataSetup:"{}"},[x("source",{src:t.src})]),r.push(t.src);else if(t.src.hasOwnProperty("playlist"))for(var s=t.src.playlist,l=0;l<s.length;l++){if(s[l].hasOwnProperty("sources")){var d=[];for(var c in s[l].sources)d.push(x("source",{src:s[l].sources[c],type:c}));r.push(x("video",{autobuffer:"true",dataSetup:"{}"},d))}else s[l].hasOwnProperty("video")?r.push(s[l].video):console.log("No recognized format");o.push(s[l].comments)}else r.push(t.src);i.appendChild(x("div",{className:"ABP-Video",tabindex:"10"},[x("div",{className:"ABP-Container"}),r[0]])),i.appendChild(x("div",{className:"ABP-Text"},[x("input",{type:"text"})])),i.appendChild(x("div",{className:"ABP-Control"},[x("div",{className:"button ABP-Play"}),x("div",{className:"progress-bar"},[x("div",{className:"bar dark"}),x("div",{className:"bar"})]),x("div",{className:"button ABP-CommentShow"}),x("div",{className:"button ABP-FullScreen"})]));var u=ABP.bind(i,t.mobile);if(0<r.length){u.loader=new CommentLoader(u.cmManager).setParser(new BilibiliFormat.XMLParser);var m=r[0];u.gotoNext=function(){var e=r.indexOf(m)+1;if(e<r.length){(m=r[e]).style.display="";var t=u.video.parentNode;t.removeChild(u.video),t.appendChild(m),u.video.style.display="none",u.video=m,u.swapVideo(m),m.addEventListener("ended",function(){u.gotoNext()})}e<o.length&&null!==o[e]&&u.loader.load("GET",o[e])},m.addEventListener("ended",function(){u.gotoNext()}),0<o.length&&u.loader.load("GET",o[0])}return u},ABP.load=function(e,t,a,n){},ABP.bind=function(n,e,t){var o={btnPlay:null,barTime:null,barLoad:null,divComment:null,btnFull:null,btnDm:null,video:null,divTextField:null,txtText:null,cmManager:null,defaults:{w:0,h:0},state:B(t,{fullscreen:!1,commentVisible:!0,allowRescale:!1,autosize:!1}),createPopup:function(e,t){if(!0===n.hasPopup)return!1;var a=x("div",{className:"ABP-Popup"},[x("text",e)]);return a.remove=function(){a.isRemoved||(a.isRemoved=!0,n.removeChild(a),n.hasPopup=!1)},n.appendChild(a),n.hasPopup=!0,"number"==typeof t&&setTimeout(function(){a.remove()},t),a},removePopup:function(){for(var e=n.getElementsByClassName("ABP-Popup"),t=0;t<e.length;t++)null!=e[t].remove?e[t].remove():e[t].parentNode.removeChild(e[t]);n.hasPopup=!1},swapVideo:null};if(o.swapVideo=function(e){e.addEventListener("timeupdate",function(){b||(o.barTime.style.width=e.currentTime/e.duration*100+"%")}),e.addEventListener("ended",function(){o.btnPlay.className="button ABP-Play",o.barTime.style.width="0%"}),e.addEventListener("progress",function(){if(null!=this.buffered){try{this.buffered.start(0);var e=this.buffered.end(0)}catch(e){return}var t=e/this.duration*100;o.barLoad.style.width=t+"%"}}),e.addEventListener("loadedmetadata",function(){if(null!=this.buffered){try{this.buffered.start(0);var e=this.buffered.end(0)}catch(e){return}var t=e/this.duration*100;o.barLoad.style.width=t+"%"}}),e.isBound=!0;var t=0;o.cmManager&&(o.cmManager.clear(),e.addEventListener("progress",function(){t==e.currentTime?(e.hasStalled=!0,o.cmManager.stop()):t=e.currentTime}),window&&window.addEventListener("resize",function(){o.cmManager.setBounds()}),e.addEventListener("timeupdate",function(){!1!==o.cmManager.display&&(e.hasStalled&&(o.cmManager.start(),e.hasStalled=!1),o.cmManager.time(Math.floor(1e3*e.currentTime)))}),e.addEventListener("play",function(){o.cmManager.start();try{var e=this.buffered.end(0)/this.duration*100;o.barLoad.style.width=e+"%"}catch(e){}}),e.addEventListener("ratechange",function(){null!=o.cmManager.def.globalScale&&0!==e.playbackRate&&(o.cmManager.def.globalScale=1/e.playbackRate,o.cmManager.rescale())}),e.addEventListener("pause",function(){o.cmManager.stop()}),e.addEventListener("waiting",function(){o.cmManager.stop()}),e.addEventListener("playing",function(){o.cmManager.start()}))},null!==n&&null!==n.getElementsByClassName){o.defaults.w=n.offsetWidth,o.defaults.h=n.offsetHeight;var a=n.getElementsByClassName("ABP-Video");if(!(a.length<=0)){var i=null;for(var r in a[0].children)if(null!=a[0].children[r].tagName&&"VIDEO"===a[0].children[r].tagName.toUpperCase()){i=a[0].children[r];break}a[0]&&e&&(a[0].style.bottom="0px");var s=a[0].getElementsByClassName("ABP-Container");if(0<s.length&&(o.divComment=s[0]),null!==i){o.video=i;var l=n.getElementsByClassName("ABP-Play");if(!(l.length<=0)){o.btnPlay=l[0];var d=n.getElementsByClassName("progress-bar");if(!(d.length<=0)){o.barHitArea=d[0];var c=d[0].getElementsByClassName("bar");o.barTime=c[0],o.barLoad=c[1];var u=n.getElementsByClassName("ABP-FullScreen");if(!(u.length<=0)){o.btnFull=u[0];var m=n.getElementsByClassName("ABP-Text");if(0<m.length){o.divTextField=m[0];var p=m[0].getElementsByTagName("input");0<p.length&&(o.txtText=p[0])}var v=n.getElementsByClassName("ABP-CommentShow");if(0<v.length&&(o.btnDm=v[0]),"undefined"!=typeof CommentManager&&(o.cmManager=new CommentManager(o.divComment),o.cmManager.display=!0,o.cmManager.init(),o.cmManager.clear(),window&&window.addEventListener("resize",function(){o.cmManager.setBounds()})),e){var h=n.getElementsByClassName("ABP-Control");0<h.length&&(o.controlBar=h[0]);var f=-1,g=function(){o.controlBar.style.display="none",o.divTextField.style.display="none",o.divComment.style.bottom="0px",o.cmManager.setBounds()};o.divComment.style.bottom=o.controlBar.offsetHeight+o.divTextField.offsetHeight+"px";var y=function(){o.controlBar.style.display="",o.divTextField.style.display="",o.divComment.style.bottom=o.controlBar.offsetHeight+o.divTextField.offsetHeight+"px";try{-1!=f&&(clearInterval(f),f=-1),f=setInterval(function(){document.activeElement!==o.txtText&&(g(),clearInterval(f),f=-1)},2500)}catch(e){console.log(e)}};n.addEventListener("touchmove",y),n.addEventListener("mousemove",y),f=setTimeout(function(){g()},4e3)}if(!0!==i.isBound){o.swapVideo(i),o.btnFull.addEventListener("click",function(){o.state.fullscreen=P(n,"ABP-FullScreen"),(o.state.fullscreen?function(e,t){if(null!=e){var a=e.className.split(" ");0<=a.indexOf(t)&&a.splice(a.indexOf(t),1),e.className=a.join(" ")}}:function(e,t){if(null!=e){var a=e.className.split(" ");a.indexOf(t)<0&&a.push(t),e.className=a.join(" ")}})(n,"ABP-FullScreen"),o.state.fullscreen=!o.state.fullscreen,o.cmManager&&o.cmManager.setBounds(),o.state.allowRescale&&(o.state.fullscreen?0<o.defaults.w&&(o.cmManager.def.scrollScale=n.offsetWidth/o.defaults.w):o.cmManager.def.scrollScale=1)}),o.btnDm.addEventListener("click",function(){0==o.cmManager.display?(o.cmManager.display=!0,o.cmManager.start()):(o.cmManager.display=!1,o.cmManager.clear(),o.cmManager.stop())});var b=!(o.barTime.style.width="0%");o.barHitArea.addEventListener("mousedown",function(e){b=!0}),document.addEventListener("mouseup",function(e){b=!1}),o.barHitArea.addEventListener("mouseup",function(e){b=!1;var t=e.layerX/this.offsetWidth*o.video.duration;4<Math.abs(t-o.video.currentTime)&&o.cmManager&&o.cmManager.clear(),o.video.currentTime=t}),o.barHitArea.addEventListener("mousemove",function(e){b&&(o.barTime.style.width=100*e.layerX/this.offsetWidth+"%")}),o.btnPlay.addEventListener("click",function(){o.video.paused?(o.video.play(),this.className="button ABP-Play ABP-Pause"):(o.video.pause(),this.className="button ABP-Play")}),n.addEventListener("keydown",function(e){e&&32==e.keyCode&&document.activeElement!==o.txtText&&(o.btnPlay.click(),e.preventDefault())}),n.addEventListener("touchmove",function(e){event.preventDefault()});var M=null;n.addEventListener("touchstart",function(e){0<e.targetTouches.length&&(M=e.targetTouches[0])}),n.addEventListener("touchend",function(e){if(0<e.changedTouches.length&&null!=M){var t=e.changedTouches[0].pageX-M.pageX,a=e.changedTouches[0].pageY-M.pageY;if(Math.abs(t)<20&&Math.abs(a)<20)return void(M=null);Math.abs(t)>3*Math.abs(a)?0<t?o.video.paused&&o.btnPlay.click():o.video.paused||o.btnPlay.click():Math.abs(a)>3*Math.abs(t)&&(o.video.volume=a<0?Math.min(1,o.video.volume+.1):Math.max(0,o.video.volume-.1)),M=null}})}if(null!==o.txtText&&o.txtText.addEventListener("keyup",function(e){if(null!=this.value)if(/^!/.test(this.value)?this.style.color="#5DE534":this.style.color="",null!=e&&13===e.keyCode){if(""==this.value)return;if(/^!/.test(this.value)){var t=this.value.substring(1).split(":");switch(t.shift()){case"help":o.createPopup("提示信息：",2e3);break;case"speed":case"rate":case"spd":if(t.length<1)o.createPopup("速度调节：输入百分比【 1% - 300% 】",2e3);else{var a=parseInt(t[0]);if(NaN!=a){var n=Math.min(Math.max(a,1),300);o.video.playbackRate=n/100}null!==o.cmManager&&o.cmManager.clear()}break;case"off":o.cmManager.display=!1,o.cmManager.clear(),o.cmManager.stop();break;case"on":o.cmManager.display=!0,o.cmManager.start();break;case"cls":case"clear":null!==o.cmManager&&o.cmManager.clear();break;case"pp":case"pause":o.video.pause();break;case"p":case"play":o.video.play();break;case"vol":case"volume":if(0==t.length)o.createPopup("目前音量："+Math.round(100*o.video.volume)+"%",2e3);else{var i=parseInt(t[0]);null!==i&&NaN!==i&&(o.video.volume=Math.max(Math.min(i,100),0)/100),o.createPopup("目前音量："+Math.round(100*o.video.volume)+"%",2e3)}}}}else if(null!=e&&38===e.keyCode)if(e.shiftKey){if(null!==o.cmManager){var r=Math.min(Math.round(100*o.cmManager.def.opacity)+5,100);o.cmManager.def.opacity=r/100,o.removePopup();o.createPopup("弹幕透明度："+Math.round(r)+"%",800)}}else{o.video.volume=Math.round(Math.min(100*o.video.volume+5,100))/100,o.removePopup();o.createPopup("目前音量："+Math.round(100*o.video.volume)+"%",800)}else if(null!=e&&40===e.keyCode)if(e.shiftKey){if(null!==o.cmManager){r=Math.max(Math.round(100*o.cmManager.def.opacity)-5,0);o.cmManager.def.opacity=r/100,o.removePopup();o.createPopup("弹幕透明度："+Math.round(r)+"%",800)}}else{o.video.volume=Math.round(Math.max(100*o.video.volume-5,0))/100,o.removePopup();o.createPopup("目前音量："+Math.round(100*o.video.volume)+"%",800)}}),"undefined"!=typeof CommentManager&&o.state.autosize){var w=function(){if(0!==i.videoHeight&&0!==i.videoWidth){var e=i.videoHeight/i.videoWidth,t=n.offsetWidth,a=n.offsetHeight;a/t<e?(n.style.width=a/e+"px",n.style.height=a+"px"):(n.style.width=t+"px",n.style.height=t*e+"px"),o.cmManager.setBounds()}};i.addEventListener("loadedmetadata",w),w()}return o}}}}}}}}}();
-var config = {
+var cfg = {
     'debug': false
 }
-var debug = config.debug ? console.log.bind(console)  : function () {
+var debug = cfg.debug ? console.log.bind(console)  : function () {
 };
 
 // setting User Preferences
@@ -85,23 +85,25 @@ class ObjectRequest{
         this.method = 'GET';
         this.url = href;
         this.data=null,
-        this.headers = {
-            'User-agent': 'Mozilla/4.0 (compatible) Greasemonkey',
-            'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'
-            //'Accept': 'application/atom+xml,application/xml,text/xml',
-            //'Referer': window.location.href,
-        };
+            this.headers = {
+                'User-agent': 'Mozilla/4.0 (compatible) Greasemonkey',
+                'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'
+                //'Accept': 'application/atom+xml,application/xml,text/xml',
+                //'Referer': window.location.href,
+            };
         this.charset = 'text/plain;charset=utf8';
         this.other=null;
     }
 }
 class Message{
     constructor(text,ExistTime=5000,RepeatTime=1) {
-            this.text=text,
+        this.text=text,
             this.ExistTime=ExistTime,
             this.RepeatTime=RepeatTime
     }
 }
+
+var config={playResX:560,playResY:420,fontlist:["Microsoft YaHei UI","Microsoft YaHei","文泉驿正黑","STHeitiSC","黑体"],font_size:1,r2ltime:8,fixtime:4,opacity:.6,space:0,max_delay:6,bottom:50,use_canvas:null,debug:!1},fillStr=function(t){var n=Array.apply(Array,arguments);return t.replace(/{{([^}]+)}}/g,function(t,e){var r;return n.some(function(t){return r=t[e]}),r||""})},RRGGBB=function(t){var n=Number(t).toString(16).toUpperCase();return(Array(7).join("0")+n).slice(-6)},hexAlpha=function(t){var n=Math.round(255*(1-t)).toString(16).toUpperCase();return Array(3-n.length).join("0")+n},funStr=function(t){return t.toString().split(/\r\n|\n|\r/).slice(1,-1).join("\n")},hypot=Math.hypot?Math.hypot.bind(Math):function(){return Math.sqrt([0].concat(Array.apply(Array,arguments)).reduce(function(t,n){return t+n*n}))},startDownload=function(t,n){var e=new Blob([t],{type:"application/octet-stream"}),r=window.URL.createObjectURL(e),o=document.createElement("a");o.href=r,o.style.display="none",document.body.appendChild(o),o.download=n,o.click(),setTimeout(function(){o.parentNode.removeChild(o)},1e3),document.addEventListener("unload",function(){window.URL.revokeObjectURL(r)})},calcWidth=function(){var t;return null===config.use_canvas&&navigator.platform.match(/linux/i)&&!navigator.userAgent.match(/chrome/i)&&(config.use_canvas=!1),debug("use canvas: %o",!1!==config.use_canvas),!1===config.use_canvas?function(){var t=document.createElement("div");t.setAttribute("style",["all: unset","top: -10000px","left: -10000px","width: auto","height: auto","position: absolute",""].join(" !important; "));var n=function(){document.body.parentNode.appendChild(t)};return document.body?n():document.addEventListener("DOMContentLoaded",n),function(n,e,r){return t.textContent=e,t.style.font="bold "+r+"px "+n,t.clientWidth+config.space}}():(t=document.createElement("canvas").getContext("2d"),function(n,e,r){return t.font="bold "+r+"px "+n,Math.ceil(t.measureText(e).width+config.space)})}(),choseFont=function(t){var n="The quick brown fox jumps over the lazy dog7531902468,.!-，。：！天地玄黄则近道矣",e=["monospace","sans-serif","sans","Symbol","Arial","Comic Sans MS","Fixed","Terminal","Times","Times New Roman","宋体","黑体","文泉驿正黑","Microsoft YaHei"],r=t[t.length-1];return t=t.filter(function(t){var r=e.some(function(e){return function(t,e){return calcWidth(t,n,72)!==calcWidth(e+","+t,n,72)}(e,t)});return debug("font %s: %o",t,r),r}),debug("fontlist: %o",t),t[0]||r},initFont=function(){var t=!1;return function(){t||(t=!0,calcWidth=calcWidth.bind(window,config.font=choseFont(config.fontlist)))}}(),generateASS=function(t,n){var e,r=fillStr(funStr(function(){}),config,n,{alpha:hexAlpha(config.opacity)}),o=function(t){t=100*t^0;var n=[[100,2],[60,2],[60,2],[1/0,0]].map(function(n){var e=t%n[0];return t=(t-e)/n[0],function(t,n){for(t=""+t;t.length<n;)t="0"+t;return t}(e,n[1])}).reverse();return n.slice(0,-1).join(":")+"."+n[3]},i={R2L:(e=function(t){return function(n){return t(n)+function(t){var n="",e=t.color.split(/(..)/).filter(function(t){return t}).map(function(t){return parseInt(t,16)});return"FFFFFF"!==t.color&&(n+="\\c&H"+t.color.split(/(..)/).reverse().join("")),.299*e[0]+.587*e[1]+.114*e[2]<48&&(n+="\\3c&HFFFFFF"),25!==t.size&&(n+="\\fs"+t.size),n}(n)}})(function(t){return"\\move("+[t.poss.x,t.poss.y,t.posd.x,t.posd.y].join(",")+")"}),Fix:e(function(t){return"\\pos("+[t.poss.x,t.poss.y].join(",")+")"})};return r+t.map(function(t){return"Dialogue: "+[0,o(t.stime),o(t.dtime),t.type,",20,20,2,,"].join(",")+"{"+i[t.type](t)+"}"+t.text.replace(/{/g,"｛").replace(/}/g,"｝").replace(/\r|\n/g,"")}).filter(function(t){return t}).join("\n")},normalDanmaku=function(t,n,e,r,o){return function(){var i=[{p:-1/0,m:0,tf:1/0,td:1/0,b:!1},{p:n,m:1/0,tf:1/0,td:1/0,b:!1},{p:n-e,m:n,tf:1/0,td:1/0,b:!0}],u=function(t){return t.r>o?-1/0:1-hypot(t.r/o,t.p/n)*Math.SQRT1_2};return function(e,a,c,f){var s=t/(a+t)*r+e;!function(t,n){i=i.filter(function(e){return e.tf>t||e.td>n})}(e,s);var m=function(t,e,r,u){var a=[];i.forEach(function(o){if(!(o.m>n)){var c=o.m,f=c+t,s=e,m=r;i.forEach(function(t){t.p>=f||t.m<=c||t.b&&u||(s=Math.max(s,t.tf),m=Math.max(m,t.td))}),a.push({p:c,r:Math.max(s-e,m-r)})}}),a.sort(function(t,n){return t.p-n.p});var c=o;return a=a.filter(function(t){return!(t.r>=c||(c=t.r,0))})}(c,e,s,f);if(!m.length)return null;var p=m.map(function(t){return[u(t),t]}).reduce(function(t,n){return t[0]>n[0]?t:n})[1],l=e+p.r,d=a/(a+t)*r+l,h=r+l;return function(t,n,e,r){i.push({p:t,m:n,tf:e,td:r,b:!1})}(p.p,p.p+c,d,h),{top:p.p,time:l}}}}(config.playResX,config.playResY,config.bottom,config.r2ltime,config.max_delay),sideDanmaku=function(t,n,e,r){return function(){var o=[{p:-1/0,m:0,td:1/0,b:!1},{p:t,m:1/0,td:1/0,b:!1},{p:t-n,m:t,td:1/0,b:!0}],i=function(t,n,e,r){var i=e;return o.forEach(function(e){e.p>=n||e.m<=t||e.b&&r||(i=Math.max(i,e.td))}),{r:i-e,p:t,m:n}},u=function(n,e){if(n.r>r)return-1/0;var o;return 1-(n.r/r*(31/32)+(o=n.p,(e?o:t-o)/t*(1/32)))};return function(n,r,a,c){!function(t){o=o.filter(function(n){return n.td>t})}(n);var f=(a?function(n,e,r){var u=[];return o.forEach(function(o){o.m>t||u.push(i(o.m,o.m+n,e,r))}),u}:function(t,n,e){var r=[];return o.forEach(function(o){o.p<0||r.push(i(o.p-t,o.p,n,e))}),r})(r,n,c);if(!f.length)return null;var s,m,p,l=f.map(function(t){return[u(t,a),t]}).reduce(function(t,n){return t[0]>n[0]?t:n})[1];return s=l.p,m=l.m,p=l.r+n+e,o.push({p:s,m:m,td:p,b:!1}),{top:l.p,time:l.r+n}}}}(config.playResY,config.bottom,config.fixtime,config.max_delay),setPosition=function(t){var n=normalDanmaku(),e=sideDanmaku();return t.sort(function(t,n){return t.time-n.time}).map(function(t){var r,o=Math.round(t.size*config.font_size),i=calcWidth(t.text,o);switch(t.mode){case"R2L":return(r=n(t.time,i,o,t.bottom))?(t.type="R2L",t.stime=r.time,t.poss={x:config.playResX+i/2,y:r.top+o},t.posd={x:-i/2,y:r.top+o},t.dtime=config.r2ltime+t.stime,t):null;case"TOP":case"BOTTOM":return function(n){var r=e(t.time,o,n,t.bottom);return r?(t.type="Fix",t.stime=r.time,t.posd=t.poss={x:Math.round(config.playResX/2),y:r.top+o},t.dtime=config.fixtime+t.stime,t):null}("TOP"===t.mode);default:return null}}).filter(function(t){return t}).sort(function(t,n){return t.stime-n.stime})},fetchXML=function(t,n){if(t.includes("ani.gamer.com.tw")){t=t.match(/https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=(\d*)/)[1];var e="https://ani.gamer.com.tw/ajax/danmuGet.php",r=new ObjectRequest(e);r.method="POST",r.data="sn="+t,request(r,function(t){var r=t.responseText;if(e.includes("https://ani.gamer.com.tw/ajax/danmuGet.php")){debug("Comments: "+r);var o=JSON.parse(r);debug("Comments: "+r);var i=(new DOMParser).parseFromString('<?xml version="1.0" encoding="utf-8"?><i></i>',"application/xml");for(var u of Object.values(o))try{var a,c=i.createElement("d");c.innerHTML=u.text.replace(/[^\u4e00-\u9fa5`~\!@#\$%\^\*\(\)_\+\|\-=\\\{\}\[\]:";'\?,\.\/\w\d<>&\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF\u2605-\u2606\u2190-\u2195\u203B]/g,"").replace("<","&lt;").replace(">","&gt;").replace("&","&amp;"),a=0==u.position?1:2==u.position?4:1==u.position?5:6;var f=u.time/10+","+a+",25,"+parseInt(u.color.match(/#([\d\w]{6})/)[1],16)+",1550236858,0,55f99b31,12108265626271746";c.setAttribute("p",f),i.getElementsByTagName("i")[0].appendChild(c)}catch(t){alert(u.text);continue}r=(new XMLSerializer).serializeToString(i)}debug("Comments: "+r),n(r)})}else t.includes("api.bilibili.com")&&GM_xmlhttpRequest({method:"GET",url:t,onload:function(t){var e=t.responseText.replace(/(?:[\0-\x08\x0B\f\x0E-\x1F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])/g,"");n(e)}})},fetchDanmaku=function(t,n){fetchXML(t,function(t){n(parseXML(t))})},parseXML=function(t){var n=(new DOMParser).parseFromString(t,"text/xml");return Array.apply(Array,n.querySelectorAll("d")).map(function(t){var n=t.getAttribute("p").split(",");return{text:t.textContent,time:Number(n[0]),mode:[void 0,"R2L","R2L","R2L","BOTTOM","TOP"][Number(n[1])],size:Number(n[2]),color:RRGGBB(16777215&parseInt(n[3],10)),bottom:Number(n[5])>0}})},getCid=function(t){debug("get cid...");var n=null;try{n=input.value.match(/.* - (https:\/\/.*)/)[1]}catch(t){}n?setTimeout(t,0,n||void 0):setTimeout(getCid,100,t)},mina=function(t){getCid(function(n){fetchDanmaku(n=n||t,function(t){var n=null;try{n=input.value.match(/(.*) - https:\/\/.*/)[1]}catch(t){}debug("got xml with %d danmaku",t.length);var e=generateASS(setPosition(t),{title:document.title,ori:location.href});startDownload("\ufeff"+e,n+".ass")})})},initButton=function(){var t=!1;return function(){debug("init button"),document.querySelector("body")&&getCid(function(n){debug("cid = %o",n),n&&!t&&(t=!0,fetchDanmaku(n,function(t){CreateButton("Download Danmaku",function(){mina(n)})}))})}}(),DanmakuDownloaderInit=function(){initFont(),initButton()};
 
 function getRandomColor() {
     Colors = {};
@@ -190,6 +192,7 @@ function init(){
             /*CreateButton('Search in bilibili',function () {
                 SearchBilibili();
             });*/
+            DanmakuDownloaderInit();
             CreateButton('Load Danmaku',function () {
                 if(window.location.href.match(/^https:\/\/anime1\.me\/\d*$/)&&input.value==""){
                     input.value="Searching...";
@@ -270,16 +273,16 @@ function toggleFullScreen() {
 function DisplayInput(href) {
     if(input==null){
         var div=document.createElement("div");
-    input=document.createElement("input");
-    input.id="InputDanmaku";
-    input.setAttribute("type","text");
-    input.setAttribute("placeholder",href);
-    input.setAttribute("onClick","this.select();");
-    input.size=100;
-    div.insertBefore(input,null);
-    var body = document.querySelector('body');
-    body.insertBefore(div, body.firstChild);
-        
+        input=document.createElement("input");
+        input.id="InputDanmaku";
+        input.setAttribute("type","text");
+        input.setAttribute("placeholder",href);
+        input.setAttribute("onClick","this.select();");
+        input.size=80;
+        div.insertBefore(input,null);
+        var body = document.querySelector('body');
+        body.insertBefore(div, body.firstChild);
+
     }
     else{
         input.setAttribute("placeholder",href);
@@ -373,7 +376,7 @@ function GetDanmaku(func) {
                         d.setAttribute("p",p);
                         var root=xmlDoc.getElementsByTagName("i");
                         root[0].appendChild(d);
-                        
+
                     }
                     catch(e){
                         alert(obj.text);
@@ -394,17 +397,17 @@ function GetDanmaku(func) {
 
 function eyny(comments){
     debug("eyny");
-            var VideoContainer = document.querySelector("#video_container");
-            var width=parseInt(VideoContainer.style.width.match(/(\d{1,4})/)[1])-20;
-            var height=parseInt(VideoContainer.style.height.match(/(\d{1,4})/)[1])-20;
-            debug("width: "+width+" &height: "+height);
+    var VideoContainer = document.querySelector("#video_container");
+    var width=parseInt(VideoContainer.style.width.match(/(\d{1,4})/)[1])-20;
+    var height=parseInt(VideoContainer.style.height.match(/(\d{1,4})/)[1])-20;
+    debug("width: "+width+" &height: "+height);
     VideoContainer.style.width=width+"px";
     VideoContainer.style.height=height+"px";
     var fixwidth = document.querySelector("div.fixwidth");
     var div=document.querySelector("div");
-            var video = VideoContainer.querySelector("#mediaplayer");
-            var ObjectEyny = new ObjectABP(VideoContainer, video, comments, width, height);
-            ABP_Init(ObjectEyny);
+    var video = VideoContainer.querySelector("#mediaplayer");
+    var ObjectEyny = new ObjectABP(VideoContainer, video, comments, width, height);
+    ABP_Init(ObjectEyny);
     var ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
     var ButtonFullscreen_ABP=ABP_Unit.querySelector("div.button.ABP-FullScreen");
     ButtonFullscreen_ABP.addEventListener("click",function () {
@@ -458,20 +461,20 @@ function anime1(comments){
 
 function animeone(comments) {
     debug("animeone");
-            var VideoContainer=document.querySelector("#player");
-            var video=VideoContainer.querySelector("#player_html5_api");
-            var ObjectAnimeone=new ObjectABP(VideoContainer,video,comments,640,360);
-            ABP_Init(ObjectAnimeone);
+    var VideoContainer=document.querySelector("#player");
+    var video=VideoContainer.querySelector("#player_html5_api");
+    var ObjectAnimeone=new ObjectABP(VideoContainer,video,comments,640,360);
+    ABP_Init(ObjectAnimeone);
 
-            var ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
+    var ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
     for(var Node of VideoContainer.childNodes) {
         if (Node != ABP_Unit) {
             Node.style.display = "none";
         }
     }
-            for(var Class of VideoContainer.classList){
-                VideoContainer.classList.toggle(Class,false);
-            }
+    for(var Class of VideoContainer.classList){
+        VideoContainer.classList.toggle(Class,false);
+    }
 }
 
 function bahamut(title,EpisodeCurrent){
@@ -613,38 +616,38 @@ function bilibili(title,EpisodeCurrent) {
                 }
             }
             href=bangumi_item.querySelector("a").href;
-                    var GetAnime=new ObjectRequest(href);
-                    request(GetAnime,function (responseDetails) {
-                        responseText=responseDetails.responseText;
-                        dom = new DOMParser().parseFromString(responseText, "text/html");
-                        var __INITIAL_STATE__=dom.querySelectorAll("script")[5];
-                        __INITIAL_STATE__=__INITIAL_STATE__.innerText.match(/window\.__INITIAL_STATE__=([^;]*)/)[1];
-                        __INITIAL_STATE__=JSON.parse(__INITIAL_STATE__);
-                        debug(__INITIAL_STATE__);
-                        var cid;
-                        for(var epInfo of __INITIAL_STATE__.epList){
-                            //debug(parseInt(epInfo.title.match(/(\d{1,4})/)[1])+" & "+parseInt(EpisodeCurrent));
-                            if(epInfo.title.match(/(\d{1,4})/)!=null){
-                                if(parseInt(epInfo.title.match(/(\d{1,4})/)[1]) == parseInt(EpisodeCurrent)){
-                                    cid=epInfo.cid;
-                                    var href="https://api.bilibili.com/x/v1/dm/list.so?oid="+cid;
-                                    SearchResult = "Search Result: [Bilibili] "+SearchResultTitle+epInfo.title+" - "+href;
-                                    break;
-                                }
-
-                            }
-                            else if(epInfo==__INITIAL_STATE__.epList[__INITIAL_STATE__.epList.length-1]){
-                                SearchResult ="Search Result: [Bilibili] Failed."
-
-                            }
-
+            var GetAnime=new ObjectRequest(href);
+            request(GetAnime,function (responseDetails) {
+                responseText=responseDetails.responseText;
+                dom = new DOMParser().parseFromString(responseText, "text/html");
+                var __INITIAL_STATE__=dom.querySelectorAll("script")[5];
+                __INITIAL_STATE__=__INITIAL_STATE__.innerText.match(/window\.__INITIAL_STATE__=([^;]*)/)[1];
+                __INITIAL_STATE__=JSON.parse(__INITIAL_STATE__);
+                debug(__INITIAL_STATE__);
+                var cid;
+                for(var epInfo of __INITIAL_STATE__.epList){
+                    //debug(parseInt(epInfo.title.match(/(\d{1,4})/)[1])+" & "+parseInt(EpisodeCurrent));
+                    if(epInfo.title.match(/(\d{1,4})/)!=null){
+                        if(parseInt(epInfo.title.match(/(\d{1,4})/)[1]) == parseInt(EpisodeCurrent)){
+                            cid=epInfo.cid;
+                            var href="https://api.bilibili.com/x/v1/dm/list.so?oid="+cid;
+                            SearchResult = "Search Result: [Bilibili] "+SearchResultTitle+epInfo.title+" - "+href;
+                            break;
                         }
-                        InsertOption( SearchResult);
-                        TucaoSearch(title,EpisodeCurrent);
-                    });
-            }
+
+                    }
+                    else if(epInfo==__INITIAL_STATE__.epList[__INITIAL_STATE__.epList.length-1]){
+                        SearchResult ="Search Result: [Bilibili] Failed."
+
+                    }
+
+                }
+                InsertOption( SearchResult);
+                TucaoSearch(title,EpisodeCurrent);
+            });
+        }
     });
-    
+
 }
 
 function TucaoSearch(title,EpisodeCurrent) {
@@ -673,11 +676,11 @@ function TucaoSearch(title,EpisodeCurrent) {
                     responseText=responseDetails.responseText;
                     dom = new DOMParser().parseFromString(responseText, "text/html");
                     var player_code=dom.querySelector("#player_code");
-                        var cid=player_code.querySelectorAll("li")[1].innerText+"-0";
-                        debug("cid: "+cid);
-                        var href="https://www.tucao.one/index.php?m=mukio&c=index&a=init&playerID="+cid;
-                        var SearchResultTitle=dom.querySelector("h1.show_title").textContent;
-                        SearchResult = "Search Result: [Tucao] "+SearchResultTitle+" - "+href;
+                    var cid=player_code.querySelectorAll("li")[1].innerText+"-0";
+                    debug("cid: "+cid);
+                    var href="https://www.tucao.one/index.php?m=mukio&c=index&a=init&playerID="+cid;
+                    var SearchResultTitle=dom.querySelector("h1.show_title").textContent;
+                    SearchResult = "Search Result: [Tucao] "+SearchResultTitle+" - "+href;
                 }
                 InsertOption( SearchResult);
                 InsertDropDown();
@@ -723,7 +726,7 @@ function request(object,func) {
             debug(responseDetails);
             //Dowork
             func(responseDetails,object.other);
-            
+
         },
         ononerror: function (responseDetails) {
             debug(responseDetails);
@@ -762,11 +765,11 @@ function ABP_Init(object){
             "width":object.width,
             "height":object.height
         });
-    var ABP_Unit=document.querySelector("div.ABP-Unit");
-    var ABP_Control=ABP_Unit.querySelector("div.ABP-Control");
-    var ABP_Text=ABP_Unit.querySelector("div.ABP-Text");
-    var ABP_Video=ABP_Unit.querySelector("div.ABP-Video");
-    var ButtonABP_Play=ABP_Unit.querySelector("div.button.ABP-Play");
+        var ABP_Unit=document.querySelector("div.ABP-Unit");
+        var ABP_Control=ABP_Unit.querySelector("div.ABP-Control");
+        var ABP_Text=ABP_Unit.querySelector("div.ABP-Text");
+        var ABP_Video=ABP_Unit.querySelector("div.ABP-Video");
+        var ButtonABP_Play=ABP_Unit.querySelector("div.button.ABP-Play");
         ABP_Video.addEventListener("click",function () {
             ButtonABP_Play.click();
         });
@@ -782,24 +785,24 @@ function ABP_Init(object){
             },2000);
 
         };
-    var ButtonFullscreen_ABP=ABP_Unit.querySelector("div.button.ABP-FullScreen");
-    ButtonFullscreen_ABP.addEventListener("click",function (){
-        toggleFullScreen();
-        //ABP_Video.style.width=ABP_Unit.offsetWidth+"px";
-        setTimeout(function(){
-        ABP_Video.style.height=ABP_Unit.offsetHeight+"px";
+        var ButtonFullscreen_ABP=ABP_Unit.querySelector("div.button.ABP-FullScreen");
+        ButtonFullscreen_ABP.addEventListener("click",function (){
+            toggleFullScreen();
+            //ABP_Video.style.width=ABP_Unit.offsetWidth+"px";
+            setTimeout(function(){
+                ABP_Video.style.height=ABP_Unit.offsetHeight+"px";
 
-    },500);
+            },500);
             if(fullscreen){
-            debug("addLisenerMousemove: true");
-            ABP_Video.addEventListener("mousemove",mousemove);
-        }
-        else {
-            debug("addLisenerMousemove: false");
-            ABP_Video.removeEventListener("mousemove",mousemove);
+                debug("addLisenerMousemove: true");
+                ABP_Video.addEventListener("mousemove",mousemove);
+            }
+            else {
+                debug("addLisenerMousemove: false");
+                ABP_Video.removeEventListener("mousemove",mousemove);
                 clearTimeout(timeout);
-        }
-    });
+            }
+        });
         if (DanmakuSpeed != undefined&&DanmakuSpeed!=NaN&&DanmakuSpeed>=100&&DanmakuSpeed<=200) {
             debug("DanmakuSpeed: " + DanmakuSpeed);
             abp.cmManager.options.scroll.scale=DanmakuSpeed/100;
@@ -870,17 +873,17 @@ function MessagePush(messages) {
             var currentTime=parseInt(abp.video.currentTime*1000);
             debug("currentTime: "+currentTime);
             debug("LasetTime: "+LasetTime);
-                if(currentTime>5000&&currentTime-LasetTime>DisplayInterval){
-                    debug(message.text);
-                    abp.createPopup(message.text,message.ExistTime);
-                    if(message.RepeatTime!=null){
-                        Pushs[message.text]=AlreadyRepeat+1;
-                        GM_setValue("Pushs",JSON.stringify(Pushs));
-                        debug(JSON.stringify(Pushs));
+            if(currentTime>5000&&currentTime-LasetTime>DisplayInterval){
+                debug(message.text);
+                abp.createPopup(message.text,message.ExistTime);
+                if(message.RepeatTime!=null){
+                    Pushs[message.text]=AlreadyRepeat+1;
+                    GM_setValue("Pushs",JSON.stringify(Pushs));
+                    debug(JSON.stringify(Pushs));
 
-                    }
-                    count++;
                 }
+                count++;
+            }
             LasetTime=currentTime;
         }
         else if(message.RepeatTime==AlreadyRepeat){
@@ -932,7 +935,7 @@ function InputLisener(k) {
                             var params = commandPrompts[0].match(/\{\{(\w{3},\d{2})\}\}/);
                             if (params!=null) {
                                 text = commandPrompts[0].replace(params[0], '');
-                               params=params[1].split(',');
+                                params=params[1].split(',');
                                 if(params.length==2){
                                     mode = params[0];
                                     size=params[1];
