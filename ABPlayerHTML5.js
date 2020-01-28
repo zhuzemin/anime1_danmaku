@@ -699,20 +699,6 @@ var CommentLoader = (function () {
                                     }
                                 }
  							}break;
-                            case "DmkSpd":{
-                                if(commandPrompts.length < 1){
-                                    ABPInst.createPopup("弹幕速度调节：输入百分比【 100% - 200% 】", 2000);
-                                }else{
-                                    var pct = parseInt(commandPrompts[0]);
-                                    if(pct != NaN){
-                                        var percentage = Math.min(Math.max(pct, 100), 200);
-                                        ABPInst.cmManager.options.scroll.scale = percentage/100;
-                                    }
-                                    if(ABPInst.cmManager !== null){
-                                        ABPInst.cmManager.clear();
-                                    }
-                                }
-                            }break;
  							case "off":{
  								ABPInst.cmManager.display = false;
  								ABPInst.cmManager.clear();
@@ -752,7 +738,7 @@ var CommentLoader = (function () {
  							}break;
  							default:break;
  						}
- 						this.value = "";
+ 						//this.value = "";
  					}
  				}else if(k != null && k.keyCode === 38){
  					if(!k.shiftKey){
