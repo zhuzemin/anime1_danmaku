@@ -151,7 +151,7 @@ function init(){
             });*/
             //DanmakuDownloaderInit();
             CreateButton('Load Danmaku',function () {
-                if(window.location.href.match(/^https:\/\/anime1\.me\/\d*$/)&&input.value==""){
+                if(window.location.href.match(/^https:\/\/anime1\.me\/\d*$/)&&input.value==""&&datalist==null){
                     input.value="Searching...";
                     var title=document.querySelector("h1.entry-title");
                     var array=title.innerText.match(/(.*)\s\[(\d*)\]/);
@@ -216,7 +216,7 @@ function init(){
         //CreateButton(`Load Danmaku`,function() {GetDanmaku(TucaoAlternate)});
         //DanmakuDownloaderInit();
         CreateButton('Load Danmaku',function () {
-            if(input.value==""){
+            if(input.value==""&&datalist==null){
                 input.value="Searching...";
                 var title=document.querySelector("h1.show_title").textContent;
                 debug("title: "+title);
