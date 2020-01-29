@@ -14,7 +14,7 @@
 // @include     https://www.bilibili.com/video/av*
 // @include     https://www.bilibili.com/bangumi/play/*
 // @include     https://www.tucao.one/play/*
-// @version     2.81
+// @version     2.82
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -27,6 +27,7 @@
 // @connect-src ani.gamer.com.tw
 // @connect-src www.bilibili.com
 // @connect-src www.tucao.one
+// @connect-src search.bilibili.com
 // ==/UserScript==
 var cfg = {
     'debug': false
@@ -918,6 +919,8 @@ function ABP_Init(object){
         }
         if(PushEnable){
             var messages=[];
+            var NoticeChrome=new Message("[Update] fix a huge and low level bug, now sure work perfectly!",5000,3);
+            messages.push(NoticeChrome);
             var NoticeDmkPost=new Message("[Update] Danmaku post command: !dm:xxxxxx",5000,3);
             messages.push(NoticeDmkPost);
             var NoticeTucao=new Message("[Update] Now support www.tucao.one",5000,3);
