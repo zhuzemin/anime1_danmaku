@@ -690,6 +690,18 @@ var getCid = function (callback) {
     try {
         cid = input.value.match(/.* - (https:\/\/.*)/)[1];
     } catch (e) {
+        var DanmakuLink=input.value.match(/(https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|(https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=\d*)/);
+        if (DanmakuLink != null) {
+
+            //bahamut
+            if (DanmakuLink[2] != null) {
+                cid = DanmakuLink[2];
+            }
+            //bilibili
+            else if (DanmakuLink[1] != null) {
+                cid = DanmakuLink[1];
+            }
+        }
     }
     if (cid) {
         setTimeout(callback, 0, cid || undefined);
@@ -707,6 +719,7 @@ var mina = function (cid0) {
                 name=input.value.match(/Search Result: (.*) - https:\/\/.*/)[1];
             }
             catch (e) {
+                name=document.title;
             }
             debug('got xml with %d danmaku', danmaku.length);
             var ass = generateASS(setPosition(danmaku), {
