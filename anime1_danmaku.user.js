@@ -14,7 +14,7 @@
 // @include     https://www.bilibili.com/video/av*
 // @include     https://www.bilibili.com/bangumi/play/*
 // @include     https://www.tucao.one/play/*
-// @version     2.8
+// @version     2.81
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -1022,7 +1022,11 @@ function GetDanmaku(func) {
                         else{
                             type=6;
                         }
-                        var p=obj.time/10+","+type+",25,"+parseInt(obj.color.match(/#([\d\w]{6})/)[1],16)+",1550236858,0,55f99b31,12108265626271746";
+                        var time=obj.time/10;
+                        if(window.location.href.includes("www.tucao.one")&&!DanmakuLink.includes("www.tucao.one")){
+                            time=parseFloat(time)+parseFloat(4);
+                        }
+                        var p=time+","+type+",25,"+parseInt(obj.color.match(/#([\d\w]{6})/)[1],16)+",1550236858,0,55f99b31,12108265626271746";
                         d.setAttribute("p",p);
                         var root=xmlDoc.getElementsByTagName("i");
                         root[0].appendChild(d);
@@ -1032,6 +1036,23 @@ function GetDanmaku(func) {
                         alert(obj.text);
                         continue;
                     }
+                }
+                comments= (new XMLSerializer()).serializeToString(xmlDoc );
+            }
+            if(window.location.href.includes("www.tucao.one")&&!DanmakuLink.includes("www.tucao.one")){
+                debug("here");
+                var parser = new DOMParser();
+                var xmlDoc   = parser.parseFromString(comments, "application/xml");
+                var nodes=xmlDoc.getElementsByTagName("d");
+                for (var node of nodes) {
+                    //debug(node.innerHTML);
+                    var p=node.getAttribute("p");
+                    //debug('p: '+p);
+                    var params = p.split(",");
+                    var time=params[0];
+                    p=p.replace(time,parseFloat(time)+parseFloat(4));
+                    //debug('p: '+p);
+                    node.setAttribute('p',p);
                 }
                 comments= (new XMLSerializer()).serializeToString(xmlDoc );
             }
