@@ -12,7 +12,7 @@ Usage:
 3: press Button next, then open Player.
 4: Volume adjust: ¡ü¡ý(arrow key).
 5: Danmaku speed adjust(temporally): use command: "!dmspd:xxx", type it in Input inside Player, "xxx" mean percentage of speed for Danmaku, (100-200%), more larger more slower, default: 100.
-6: post Danmaku: use command: "!dm:xxx", specify Danmaku type and size: "!dm:xxx{{type,size}}", type: scl/btm/top, size: 25/36/45/64.
+6: post Danmaku: use command: "!dm:xxx", specify Danmaku type/size/color: "!dm:xxx{{type,size,color}}", type: scl/btm/top, size: 25/36/45/64, color: black/blue/green/orange/pink/purple/red/silver/yellow/white/gold.
 
 *post Danmaku work with "www.tucao.one", Danmaku from "tucao.one" will add tag "[www.tucao.one]".
 *"https://anime1.me/xxxxxx" / "www.tucao.one/play/xxxxxx" can auto search Danmaku, just leave Input blank, click Button.
