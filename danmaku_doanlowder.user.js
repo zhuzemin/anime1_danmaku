@@ -601,42 +601,39 @@ var fetchXML = function (cid, callback) {
         request(danmaku,function (responseDetails) {
             var responseText = responseDetails.responseText;
             var comments = responseText;
-            if(DanmakuLink.includes("https://ani.gamer.com.tw/ajax/danmuGet.php")){
-                debug("Comments: " + comments);
-                var json=JSON.parse(comments);
-                debug("Comments: " + comments);
-                var parser = new DOMParser();
-                var xmlDoc   = parser.parseFromString('<?xml version="1.0" encoding="utf-8"?><i></i>', "application/xml");
-                for(var obj of Object.values( json)){
-                    try{
-                        var d=xmlDoc.createElement("d");
-                        d.innerHTML=obj.text.replace(/[^\u4e00-\u9fa5`~\!@#\$%\^\*\(\)_\+\|\-=\\\{\}\[\]:";'\?,\.\/\w\d<>&\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF\u2605-\u2606\u2190-\u2195\u203B]/g,"").replace("<","&lt;").replace(">","&gt;").replace("&","&amp;");
-                        var type;
-                        if(obj.position==0){
-                            type=1;
-                        }
-                        else if(obj.position==2){
-                            type=4;
-                        }
-                        else if(obj.position==1){
-                            type=5;
-                        }
-                        else{
-                            type=6;
-                        }
-                        var p=obj.time/10+","+type+",25,"+parseInt(obj.color.match(/#([\d\w]{6})/)[1],16)+",1550236858,0,55f99b31,12108265626271746";
-                        d.setAttribute("p",p);
-                        var root=xmlDoc.getElementsByTagName("i");
-                        root[0].appendChild(d);
-
+            debug("Comments: " + comments);
+            var json=JSON.parse(comments);
+            debug("Comments: " + comments);
+            var parser = new DOMParser();
+            var xmlDoc   = parser.parseFromString('<?xml version="1.0" encoding="utf-8"?><i></i>', "application/xml");
+            var root=xmlDoc.getElementsByTagName("i");
+            for(var obj of Object.values( json)){
+                try{
+                    var d=xmlDoc.createElement("d");
+                    d.innerHTML=obj.text.replace(/[^\u4e00-\u9fa5`~\!@#\$%\^\*\(\)_\+\|\-=\\\{\}\[\]:";'\?,\.\/\w\d<>&\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF\u2605-\u2606\u2190-\u2195\u203B]/g,"").replace("<","&lt;").replace(">","&gt;").replace("&","&amp;");
+                    var type;
+                    if(obj.position==0){
+                        type=1;
                     }
-                    catch(e){
-                        alert(obj.text);
-                        continue;
+                    else if(obj.position==2){
+                        type=4;
                     }
+                    else if(obj.position==1){
+                        type=5;
+                    }
+                    else{
+                        type=6;
+                    }
+                    var p=obj.time/10+","+type+",25,"+parseInt(obj.color.match(/#([\d\w]{6})/)[1],16)+",1550236858,0,55f99b31,12108265626271746";
+                    d.setAttribute("p",p);
+                    root[0].appendChild(d);
                 }
-                comments= (new XMLSerializer()).serializeToString(xmlDoc );
+                catch(e){
+                    debug(e+" "+obj.text);
+                    continue;
+                }
             }
+            comments= (new XMLSerializer()).serializeToString(xmlDoc );
             debug("Comments: " + comments);
             callback(comments);
         });
@@ -651,7 +648,59 @@ var fetchXML = function (cid, callback) {
             }
         });
     }
+    else if(cid.includes("danmu.aixifan.com")) {
+        var DanmakuLink = cid.replace(/\d$/, AcfunCount);
+        var danmaku = new ObjectRequest(DanmakuLink);
+        //frist request
+        request(danmaku, function (responseDetails) {
+            var responseText = responseDetails.responseText;
+            comments = responseText;
+            var json = JSON.parse(comments);
+            AcfunDanmaku = AcfunDanmaku.concat(json);
+            debug("AcfunDanmaku.length: "+AcfunDanmaku[2].length);
+            if(AcfunDanmaku[2].length>=500){
+                AcfunCount++;
+                //second request
+                DanmakuLink = cid.replace(/\d$/, AcfunCount);
+                danmaku.url = DanmakuLink;
+                request(danmaku, function (responseDetails) {
+                    responseText = responseDetails.responseText;
+                    comments = responseText;
+                    json = JSON.parse(comments);
+                    AcfunDanmaku = AcfunDanmaku.concat(json);
+                    debug("AcfunDanmaku.length: "+AcfunDanmaku.length);
+                    if(AcfunDanmaku.length>=1000) {
+                        AcfunCount++;
+                        //thrid request
+                        DanmakuLink = cid.replace(/\d$/, AcfunCount);
+                        danmaku.url = DanmakuLink;
+                        request(danmaku, function (responseDetails) {
+                            responseText = responseDetails.responseText;
+                            comments = responseText;
+                            json = JSON.parse(comments);
+                            AcfunDanmaku = AcfunDanmaku.concat(json);
+                            comments=AcfunParse(AcfunDanmaku);
+                            callback(comments);
+                        });
+                    }
+                    else {
+                        comments=AcfunParse(AcfunDanmaku);
+                        callback(comments);
+                    }
+                });
+
+            }
+            else {
+                comments=AcfunParse(AcfunDanmaku);
+                callback(comments);
+            }
+        });
+        //reset for player
+        AcfunDanmaku = [];
+        AcfunCount = 1;
+    }
 };
+
 var fetchDanmaku = function (cid, callback) {
     fetchXML(cid, function (content) {
         callback(parseXML(content));
@@ -688,9 +737,9 @@ var getCid = function (callback) {
     debug('get cid...');
     var cid = null;
     try {
-        cid = input.value.match(/.* - (https:\/\/.*)/)[1];
+        cid = input.value.match(/.* - (https?:\/\/.*)/)[1];
     } catch (e) {
-        var DanmakuLink=input.value.match(/(https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|(https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=\d*)/);
+        var DanmakuLink=input.value.match(matching);
         if (DanmakuLink != null) {
 
             //bahamut
@@ -716,7 +765,7 @@ var mina = function (cid0) {
         fetchDanmaku(cid, function (danmaku) {
             var name = null;
             try {
-                name=input.value.match(/Search Result: (.*) - https:\/\/.*/)[1];
+                name=input.value.match(/Search Result: (.*) - https?:\/\/.*/)[1];
             }
             catch (e) {
                 name=document.title;
@@ -754,6 +803,7 @@ var initButton = (function () {
  */
 // 初始化
 var DanmakuDownloaderInit = function () {
+    IsDownload=true;
     initFont();
     initButton();
 };
