@@ -16,7 +16,7 @@
 // @include     https://www.bilibili.com/video/av*
 // @include     https://www.bilibili.com/bangumi/play/*
 // @include     https://www.tucao.one/play/*
-// @version     3.2
+// @version     3.21
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -102,9 +102,9 @@ class ObjectRequest{
 var messages=[
     ["[Update] half automatically search Danmaku in video.eyny.com ",5000,3],
     ["[Notice] Feedbak: QQ Group: 32835999, I like to hear some review.^_^",5000,5],
-    ["[Notice] Open Disqus in anime1.me: !comment",5000,null],
-    ["[Notice] Danmaku post command: !dm:xxxxxx",5000,null],
-    ["[Notice] Danmaku speed command: !dmspd:150",5000,null]
+    ["[Notice] Open Disqus in anime1.me: !comment",5000,10],
+    ["[Notice] Danmaku post command: !dm:xxxxxx",5000,10],
+    ["[Notice] Danmaku speed command: !dmspd:150",5000,10]
 ];
 
 
@@ -215,9 +215,9 @@ function init(){
                 var arr=input.value.match(/(.*) (\d{1,4})/);
                 input.value="Searching...";
                 input.nextElementSibling.innerHTML="Searching...";
-                var title=arr[1];
+                title=arr[1];
                 debug("title: "+title);
-                var EpisodeCurrent=arr[2];
+                EpisodeCurrent=arr[2];
                 debug("EpisodeCurrent: "+EpisodeCurrent);
                 bahamut(title,EpisodeCurrent);
                 var CheckValue=setInterval(function () {
