@@ -9,12 +9,14 @@
 // @include     https://v.anime1.me/watch?v=*
 // @include     http://video.eyny.com/*
 // @exclude     http://video.eyny.com/channel/*
+// @exclude     http://video.eyny.com/en/tag/*
+// @exclude     http://video.eyny.com/en/playlist?list=*
 // @include     http://www.bilibili.com/video/av*
 // @include     http://bangumi.bilibili.com/movie/*
 // @include     https://www.bilibili.com/video/av*
 // @include     https://www.bilibili.com/bangumi/play/*
 // @include     https://www.tucao.one/play/*
-// @version     2.83
+// @version     2.9
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -28,6 +30,8 @@
 // @connect-src www.bilibili.com
 // @connect-src www.tucao.one
 // @connect-src search.bilibili.com
+// @connect-src www.acfun.cn
+// @connect-src danmu.aixifan.com
 // ==/UserScript==
 var cfg = {
     'debug': false
@@ -56,6 +60,13 @@ var abp=null;
 var TucaoStatus=false;
 var TucaoEnable=true;
 var PushEnable=true;
+var SearchFinished=false;
+var AcfunCount=1;
+var AcfunDanmaku = [];
+var TucaoDelay=4;
+var matching=/(https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=(\d*)|(http:\/\/danmu\.aixifan\.com\/V2\/\d*\?pageSize=500&pageNo=1)/;
+var InputPlaceholder='Leave blank or, https://api.bilibili.com...?oid=xxxxxx, https://ani.gamer.com.tw...?sn=xxxxxx, http://danmu.aixifan.com/V2/xxxxxx?pageSize=...';
+var InputPlaceholderSearch='Search or, https://api.bilibili.com...?oid=xxxxxx, https://ani.gamer.com.tw...?sn=xxxxxx, http://danmu.aixifan.com/V2/xxxxxx?pageSize=...';
 class ObjectABP{
     constructor(VideoContainer,video,comments,width,height) {
         this.VideoContainer = VideoContainer;
@@ -80,13 +91,14 @@ class ObjectRequest{
         this.other=null;
     }
 }
-class Message{
-    constructor(text,ExistTime=5000,RepeatTime=1) {
-        this.text=text,
-            this.ExistTime=ExistTime,
-            this.RepeatTime=RepeatTime
-    }
-}
+
+var messages=[];
+messages.push(["[Update] fix a huge and low level bug, now sure work perfectly!",5000,1]);
+messages.push(["[Update] Danmaku post command: !dm:xxxxxx",5000,3]);
+messages.push(["[Update] Now support www.tucao.one",5000,3]);
+messages.push(["[Update] Now can half automatically search Danmaku in video.eyny.com ",5000,3]);
+messages.push(["[Update] Danmaku speed command: !dmspd:150",5000,3]);
+messages.push(["[Update] Now can search Danmaku from Acfun, download of Acfun will be function in next version.",5000,3]);
 
 
 
@@ -137,37 +149,44 @@ function init(){
 
         });
     }
-    else if(window.location.href.includes("https://anime1.me")){
-        if(window.location.href.match(/^https:\/\/anime1\.me\/\d*$/)){
+    else if(window.location.href.match(/^https:\/\/anime1\.me\/\d*$/)){
             //in here clear value , because maybe need open frame in tab
             GM_setValue("DanmakuLink", null);
             GM_setValue("DanmakuLinkTucao", null);
-            DisplayInput('Leave blank or, https://api.bilibili.com...?oid=xxxxxx, https://ani.gamer.com.tw...?sn=xxxxxx');
+            DisplayInput(InputPlaceholder);
 
             /*CreateButton('Search in bilibili',function () {
                 SearchBilibili();
             });*/
-            //DanmakuDownloaderInit();
             CreateButton('Load Danmaku',function () {
-                if(window.location.href.match(/^https:\/\/anime1\.me\/\d*$/)&&input.value==""&&datalist==null){
+                if(input.value==""&&datalist==null){
                     input.value="Searching...";
                     var title=document.querySelector("h1.entry-title");
                     var array=title.innerText.match(/(.*)\s\[(\d*)\]/);
                     title=array[1];
                     var EpisodeCurrent=array[2];
                     bahamut(title,EpisodeCurrent);
-                    setTimeout(DanmakuDownloaderInit,5000);
+                    var CheckValue=setInterval(function () {
+                        if(SearchFinished&&input.value.match(matching)){
+                            DanmakuDownloaderInit();
+                            input.nextElementSibling.innerHTML='Load Player';
+                            clearInterval(CheckValue);
+                        }
+                    },2000);
                 }
-                else if(input.value.match(/(https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|(https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=\d*)/)!=null) {
+                else if(input.value.match(matching)!=null&&(datalist==null||SearchFinished)) {
                     GM_setValue("DanmakuLink", input.value);
-                    DanmakuDownloaderInit();
                     input.value="Done, now you can open Player.";
                 }
             });
         }
-    }
     else if(window.location.href.includes("i.animeone.me")){
-        GetDanmaku(animeone);
+        var CheckValue=setInterval(function () {
+            var ret=GetDanmaku(animeone);
+            if(ret){
+                clearInterval(CheckValue);
+            }
+        },5000);
     }
     else if(window.location.href.includes("v.anime1.me")){
         var CheckValue=setInterval(function () {
@@ -178,9 +197,7 @@ function init(){
         },5000);
     }
     else if(window.location.href.includes("video.eyny.com")) {
-        DisplayInput('Search or, https://api.bilibili.com...?oid=xxxxxx, https://ani.gamer.com.tw...?sn=xxxxxx');
-        //CreateButton('Search in bilibili',SearchBilibili);
-        //CreateButton(`Load Danmaku`,function() {GetDanmaku(eyny)});
+        DisplayInput(InputPlaceholderSearch);
         CreateButton('Load Danmaku',function () {
             if(input.value.match(/^(.*) (\d{1,4})$/)!=null){
                 var arr=input.value.match(/(.*) (\d{1,4})/);
@@ -190,31 +207,31 @@ function init(){
                 var EpisodeCurrent=arr[2];
                 debug("EpisodeCurrent: "+EpisodeCurrent);
                 bahamut(title,EpisodeCurrent);
-                setTimeout(function (){
-                    DanmakuDownloaderInit();
-                },5000);
+                var CheckValue=setInterval(function () {
+                    if(SearchFinished&&input.value.match(matching)){
+                        DanmakuDownloaderInit();
+                        input.nextElementSibling.innerHTML='Load Player';
+                        clearInterval(CheckValue);
+                    }
+                },2000);
             }
-            else if(input.value.match(/(https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|(https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=\d*)/)!=null) {
-                DanmakuDownloaderInit();
+            else if(input.value.match(matching)!=null&&(datalist==null||SearchFinished)) {
                 GetDanmaku(eyny);
             }
         });
         input.nextElementSibling.addEventListener("mouseover",function () {
             var placeholder=input.getAttribute('placeholder');
-            if(placeholder=="Search or, https://api.bilibili.com...?oid=xxxxxx, https://ani.gamer.com.tw...?sn=xxxxxx"){
+            if(placeholder==InputPlaceholderSearch){
                 input.setAttribute('placeholder','Search Format Example: 歌舞伎町夏洛克 07');
             }
             else {
-                input.setAttribute('placeholder','Search or, https://api.bilibili.com...?oid=xxxxxx, https://ani.gamer.com.tw...?sn=xxxxxx');
+                input.setAttribute('placeholder',InputPlaceholderSearch);
             }
 
         });
     }
     else if(window.location.href.includes("www.tucao.one")) {
-        DisplayInput('Leave blank or, https://api.bilibili.com...?oid=xxxxxx, https://ani.gamer.com.tw...?sn=xxxxxx');
-        //CreateButton('Search in bilibili',SearchBilibili);
-        //CreateButton(`Load Danmaku`,function() {GetDanmaku(TucaoAlternate)});
-        //DanmakuDownloaderInit();
+        DisplayInput(InputPlaceholder);
         CreateButton('Load Danmaku',function () {
             if(input.value==""&&datalist==null){
                 input.value="Searching...";
@@ -224,13 +241,15 @@ function init(){
                 title=array[1];
                 var EpisodeCurrent=array[2];
                 bahamut(title,EpisodeCurrent);
-                setTimeout(function (){
-                    DanmakuDownloaderInit();
-                    input.nextElementSibling.innerHTML='Load Player';
-                },5000);
+                var CheckValue=setInterval(function () {
+                    if(SearchFinished&&input.value.match(matching)){
+                        DanmakuDownloaderInit();
+                        input.nextElementSibling.innerHTML='Load Player';
+                        clearInterval(CheckValue);
+                    }
+                },2000);
             }
-            else if(input.value.match(/(https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|(https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=\d*)/)!=null) {
-                DanmakuDownloaderInit();
+            else if(input.value.match(matching)!=null&&(datalist==null||SearchFinished)) {
                 GetDanmaku(TucaoAlternate);
             }
         });
@@ -308,20 +327,11 @@ function anime1(comments){
 
 function animeone(comments) {
     debug("animeone");
-    var VideoContainer=document.querySelector("#player");
+    var VideoContainer=document.querySelector("body");
     var video=VideoContainer.querySelector("#player_html5_api");
     var ObjectAnimeone=new ObjectABP(VideoContainer,video,comments,640,360);
     ABP_Init(ObjectAnimeone);
 
-    var ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
-    for(var Node of VideoContainer.childNodes) {
-        if (Node != ABP_Unit) {
-            Node.style.display = "none";
-        }
-    }
-    for(var Class of VideoContainer.classList){
-        VideoContainer.classList.toggle(Class,false);
-    }
 }
 
 function TucaoAlternate(comments) {
@@ -360,7 +370,6 @@ function bahamut(title,EpisodeCurrent){
             SearchResult ="Search Result: [Bahamut] Failed.";
             InsertOption( SearchResult);
             bilibili(title,EpisodeCurrent);
-            return;
         }
         else {
             var li = anime_list.querySelector("li");
@@ -378,9 +387,6 @@ function bahamut(title,EpisodeCurrent){
                     href = responseDetails.finalUrl;
                     debug(href);
                     SearchResult ="Search Result: [Bahamut] Failed.";
-                    InsertOption( SearchResult);
-                    bilibili(title,EpisodeCurrent);
-                    return;
                 }
                 else {
                     var anime_name=dom.querySelector("div.anime_name").firstChild.innerText;
@@ -393,12 +399,11 @@ function bahamut(title,EpisodeCurrent){
                             href = href.replace(window.location.href, "https://ani.gamer.com.tw/animeVideo.php");
                             debug(href);
                             SearchResult = "Search Result: [Bahamut] " + SearchResultTitle + " "+episode.innerText + " - " + href;
-                            InsertOption( SearchResult);
-                            bilibili(title,EpisodeCurrent);
-                            break;
                         }
                     }
                 }
+                InsertOption( SearchResult);
+                bilibili(title,EpisodeCurrent);
             });
         }
     });
@@ -415,9 +420,7 @@ function bilibili(title,EpisodeCurrent) {
         if(bangumi_items.length==0){
             SearchResult ="Search Result: [Bilibili] Failed."
             InsertOption( SearchResult);
-            //InsertDropDown();
             TucaoSearch(title,EpisodeCurrent);
-            return;
         }
         else {
             var bangumi_item;
@@ -474,7 +477,7 @@ function TucaoSearch(title,EpisodeCurrent) {
         if(search_list==null){
             SearchResult ="Search Result: [Tucao] Failed."
             InsertOption( SearchResult);
-            InsertDropDown();
+            acfun(title,EpisodeCurrent)
         }
         else {
             var bangumi_item=search_list.querySelector("div.list");
@@ -496,12 +499,60 @@ function TucaoSearch(title,EpisodeCurrent) {
                     SearchResult = "Search Result: [Tucao] "+SearchResultTitle+" - "+href;
                 }
                 InsertOption( SearchResult);
-                InsertDropDown();
+                acfun(title,EpisodeCurrent);
             });
         }
     });
 
 }
+
+function acfun(title,EpisodeCurrent){
+    var href="https://www.acfun.cn/rest/pc-direct/search/bgm?keyword="+encodeURI(simplized(title))+"&pCursor=1&requestId=";
+    var search=new ObjectRequest(href);
+    var SearchResult;
+
+    request(search,function (responseDetails) {
+        var responseText=responseDetails.responseText;
+        var json=JSON.parse(responseText);
+        if(json.bgmList==undefined){
+
+            SearchResult ="Search Result: [Acfun] Failed."
+            InsertOption( SearchResult);
+            InsertDropDown();
+        }
+        else {
+            href = "https://www.acfun.cn/bangumi/aa"+json.bgmList[0].id;
+            debug(href);
+            var GetAnime = new ObjectRequest(href);
+            request(GetAnime, function (responseDetails) {
+                responseText = responseDetails.responseText;
+                dom = new DOMParser().parseFromString(responseText, "text/html");
+                var bangumiData = dom.querySelectorAll("script")[7];
+                /*for(var s of bangumiData){
+                    debug("bangumiData: "+s.innerText);
+
+                }*/
+                debug("bangumiData: " + bangumiData);
+                bangumiData = bangumiData.innerText.match(/window\.bangumiList = ([^;]*)/)[1];
+                debug("bangumiData: " + bangumiData);
+                bangumiData = JSON.parse(bangumiData);
+                for (var item of bangumiData.items) {
+                    if (item.episodeName.includes(parseInt(EpisodeCurrent))) {
+                        var videoId = item.videoId;
+                        var SearchResultTitle = dom.querySelector("h2.title").textContent;
+                        debug('SearchResultTitle: ' + SearchResultTitle);
+                        href = 'http://danmu.aixifan.com/V2/' + videoId + '?pageSize=500&pageNo=1';
+                        SearchResult = "Search Result: [Acfun] " + SearchResultTitle + " " + item.episodeName + " - " + href;
+                        break;
+                    }
+                }
+                InsertOption( SearchResult);
+                InsertDropDown();
+            });
+        }
+    });
+}
+
 
 
 //library
@@ -538,15 +589,8 @@ function InsertOption(value) {
     var option=document.createElement("option");
     option.value=value;
     datalist.insertBefore(option,null);
-    if(!value.includes("Failed")&&!input.value.includes("Bahamut")&&!input.value.includes("Bilibili")){
+    if(!value.includes("Failed")&&!/www\.tucao\.one/.test(value)){
         input.value = value;
-        if(input.value.match(/(api\.bilibili\.com)|(ani\.gamer\.com\.tw)/)!=null) {
-            GM_setValue("DanmakuLink", input.value);
-        }
-        else if (/www\.tucao\.one/.test(value)){
-            GM_setValue("DanmakuLinkTucao", value);
-
-        }
     }
     else if (/www\.tucao\.one/.test(value)){
         GM_setValue("DanmakuLinkTucao", value);
@@ -559,6 +603,29 @@ function InsertOption(value) {
     else{
         debug("InsertOption Error: value="+value+" & input="+input.value);
     }
+    /*
+    if(!value.includes("Failed")&&!input.value.includes("Bahamut")&&!input.value.includes("Bilibili")&&!input.value.includes("Acfun")){
+        input.value = value;
+        if(input.value.match(/(api\.bilibili\.com)|(ani\.gamer\.com\.tw)|(danmu\.aixifan\.com)/)!=null) {
+            GM_setValue("DanmakuLink", input.value);
+        }
+        else if (/www\.tucao\.one/.test(value)){
+            GM_setValue("DanmakuLinkTucao", value);
+
+        }
+    }
+    else if (/www\.tucao\.one/.test(value)){
+        input.value = value;
+        GM_setValue("DanmakuLinkTucao", value);
+
+    }
+    else  if(value.includes("Failed")&&input.value=="Searching..."){
+        input.value = "Search Result: Failed.";
+
+    }
+    else{
+        debug("InsertOption Error: value="+value+" & input="+input.value);
+    }*/
 }
 
 function InsertDropDown() {
@@ -569,6 +636,7 @@ function InsertDropDown() {
         background-size:  1.5em 1.5em;
         background-repeat: no-repeat;
         `;
+    SearchFinished=true;
 }
 
 
@@ -760,19 +828,19 @@ function MessagePush(messages) {
     }
     debug(JSON.stringify(Pushs));
     messages.sort(function(a, b) {
-        return a.ExistTime - b.ExistTime;
+        return a[1] - b[1];
     });
-    var CheckInterval=messages[0].ExistTime;
+    var CheckInterval=messages[0][1];
     debug("CheckInterval: "+CheckInterval);
-    var DisplayInterval=messages[messages.length-1].ExistTime;
+    var DisplayInterval=messages[messages.length-1][1];
     debug("DisplayInterval: "+DisplayInterval);
     var count=1;
     var LasetTime=0;
     var MessageCheck=setInterval(function () {
         var message=messages[count-1];
         var AlreadyRepeat;
-        if(Pushs[message.text]!=undefined){
-            AlreadyRepeat=parseInt(Pushs[message.text]);
+        if(Pushs[message[0]]!=undefined){
+            AlreadyRepeat=parseInt(Pushs[message[0]]);
         }
         else{
             AlreadyRepeat=0;
@@ -780,15 +848,15 @@ function MessagePush(messages) {
         if(count-1==messages.length){
             clearInterval(MessageCheck);
         }
-        else if(message.RepeatTime==null||message.RepeatTime>AlreadyRepeat){
+        else if(message[2]==null||message[2]>AlreadyRepeat){
             var currentTime=parseInt(abp.video.currentTime*1000);
             debug("currentTime: "+currentTime);
             debug("LasetTime: "+LasetTime);
             if(currentTime>3000&&currentTime-LasetTime>DisplayInterval){
-                debug(message.text);
-                abp.createPopup(message.text,message.ExistTime);
-                if(message.RepeatTime!=null){
-                    Pushs[message.text]=AlreadyRepeat+1;
+                debug(message[0]);
+                abp.createPopup(message[0],message[1]);
+                if(message[2]!=null){
+                    Pushs[message[0]]=AlreadyRepeat+1;
                     GM_setValue("Pushs",JSON.stringify(Pushs));
                     debug(JSON.stringify(Pushs));
 
@@ -797,7 +865,7 @@ function MessagePush(messages) {
             }
             LasetTime=currentTime;
         }
-        else if(message.RepeatTime==AlreadyRepeat){
+        else if(message[2]==AlreadyRepeat){
             count++;
 
         }
@@ -919,25 +987,12 @@ function ABP_Init(object){
 
         }
         if(PushEnable){
-            var messages=[];
-            var NoticeChrome=new Message("[Update] fix a huge and low level bug, now sure work perfectly!",5000,3);
-            messages.push(NoticeChrome);
-            var NoticeDmkPost=new Message("[Update] Danmaku post command: !dm:xxxxxx",5000,3);
-            messages.push(NoticeDmkPost);
-            var NoticeTucao=new Message("[Update] Now support www.tucao.one",5000,3);
-            messages.push(NoticeTucao);
-            var NoticeEyny=new Message("[Update] Now can half automatic search in video.eyny.com ",5000,3);
-            messages.push(NoticeEyny);
-            var NoticeDmkSpd=new Message("[Update] Danmaku speed command: !dmspd:150",5000,3);
-            messages.push(NoticeDmkSpd);
-            var DmkPostStatus;
             if(!TucaoStatus){
-                DmkPostStatus=new Message("[Error] tucao.one search failed, can not post Danmaku.",5000,null);
+                messages.push(["[Error] tucao.one search failed, can not post Danmaku.",5000,null]);
             }
             else{
-                DmkPostStatus=new Message("[Notice] tucao.one search success, you can post Danmaku.",5000,null);
+                messages.push(["[Notice] tucao.one search success, you can post Danmaku.",5000,null]);
             }
-            messages.push(DmkPostStatus);
             MessagePush(messages);
         }
     }
@@ -956,14 +1011,14 @@ function GetDanmaku(func) {
 
             try{
                 DanmakuLink=GM_getValue("DanmakuLink");
-                DanmakuLink=DanmakuLink.match(/(https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=(\d*)/);
+                DanmakuLink=DanmakuLink.match(matching);
             }
             catch(e){
                 //debug("Error: "+ e);
             }
         }
         else{
-            DanmakuLink=input.value.match(/(https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=(\d*)/);
+            DanmakuLink=input.value.match(matching);
         }
     }
     else if(func.name=="OtherInsertTucao") {
@@ -980,7 +1035,7 @@ function GetDanmaku(func) {
     if(DanmakuLink!=null){
         var sn;
         //not tucao
-        if(DanmakuLink.length==3){
+        if(DanmakuLink.length>1){
             //bahamut
             if(DanmakuLink[2]!=null){
                 DanmakuLink=DanmakuLink[2];
@@ -990,6 +1045,10 @@ function GetDanmaku(func) {
             //bilibili
             else if(DanmakuLink[1]!=null){
                 DanmakuLink=DanmakuLink[1];
+            }
+            //acfun
+            else if(DanmakuLink[3]!=null){
+                DanmakuLink=DanmakuLink[3].replace(/\d$/,AcfunCount);
             }
 
         }
@@ -1009,6 +1068,7 @@ function GetDanmaku(func) {
                 debug("Comments: " + comments);
                 var parser = new DOMParser();
                 var xmlDoc   = parser.parseFromString('<?xml version="1.0" encoding="utf-8"?><i></i>', "application/xml");
+                var root=xmlDoc.getElementsByTagName("i");
                 for(var obj of Object.values( json)){
                     try{
                         var d=xmlDoc.createElement("d");
@@ -1028,22 +1088,69 @@ function GetDanmaku(func) {
                         }
                         var time=obj.time/10;
                         if(window.location.href.includes("www.tucao.one")){
-                            time=parseFloat(time)+parseFloat(4);
+                            time=parseFloat(time)+parseFloat(TucaoDelay);
                         }
                         var p=time+","+type+",25,"+parseInt(obj.color.match(/#([\d\w]{6})/)[1],16)+",1550236858,0,55f99b31,12108265626271746";
                         d.setAttribute("p",p);
-                        var root=xmlDoc.getElementsByTagName("i");
                         root[0].appendChild(d);
 
                     }
                     catch(e){
-                        alert(obj.text);
+                        debug(e+" "+obj.text);
                         continue;
                     }
                 }
                 comments= (new XMLSerializer()).serializeToString(xmlDoc );
             }
-            if(window.location.href.includes("www.tucao.one")&&!DanmakuLink.includes("www.tucao.one")){
+            else if(DanmakuLink.includes("danmu.aixifan.com")){
+                debug("Comments: " + comments);
+                var json=JSON.parse(comments);
+                AcfunDanmaku=AcfunDanmaku.concat(json);
+                if(AcfunCount<3){
+                    AcfunCount++;
+                    GetDanmaku(func);
+                    return;
+                }
+                else {
+                    debug("AcfunDanmaku: "+AcfunDanmaku);
+                    var parser = new DOMParser();
+                    var xmlDoc   = parser.parseFromString('<?xml version="1.0" encoding="utf-8"?><i></i>', "application/xml");
+                     for(var arr of AcfunDanmaku){
+                        if(arr.length!=0){
+                            for(var obj of arr){
+                                try{
+                                var d=xmlDoc.createElement("d");
+                                //my regex
+                                d.innerHTML=obj.m.replace(/[^\u4e00-\u9fa5`~\!@#\$%\^\*\(\)_\+\|\-=\\\{\}\[\]:";'\?,\.\/\w\d<>&\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF\u2605-\u2606\u2190-\u2195\u203B]/g,"").replace("<","&lt;").replace(">","&gt;").replace("&","&amp;");
+                                //tiansh regex
+                                //d.innerHTML=obj.m.replace(/(?:[\0-\x08\x0B\f\x0E-\x1F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])/g, '');
+                                var c=obj.c.split(',');
+                                var time=c[0];
+                                if(window.location.href.includes("www.tucao.one")){
+                                    time=parseFloat(time)+parseFloat(TucaoDelay);
+                                }
+                                var color=c[1];
+                                var mode=c[2];
+                                var size=c[3];
+                                var p=time+","+mode+","+size+","+color+",1550236858,0,55f99b31,12108265626271746";
+                                d.setAttribute("p",p);
+                                //must be here
+                                var root=xmlDoc.getElementsByTagName("i");
+                                root[0].appendChild(d);
+                        }
+                                catch(e){
+                                    debug(e+" "+d.innerHTML);
+                                    continue;
+
+                                }
+                         }
+                        }
+                    }
+                    comments= (new XMLSerializer()).serializeToString(xmlDoc );
+                    debug("Comments: " + comments);
+                }
+            }
+            else if(window.location.href.includes("www.tucao.one")&&DanmakuLink.includes("api.bilibili.com")){
                 var parser = new DOMParser();
                 var xmlDoc   = parser.parseFromString(comments, "application/xml");
                 var nodes=xmlDoc.getElementsByTagName("d");
@@ -1053,13 +1160,13 @@ function GetDanmaku(func) {
                     //debug('p: '+p);
                     var params = p.split(",");
                     var time=params[0];
-                    p=p.replace(time,parseFloat(time)+parseFloat(4));
+                    p=p.replace(time,parseFloat(time)+parseFloat(TucaoDelay));
                     //debug('p: '+p);
                     node.setAttribute('p',p);
                 }
                 comments= (new XMLSerializer()).serializeToString(xmlDoc );
             }
-            debug("Comments: " + comments);
+            //debug("Comments: " + comments);
             func(comments);
         });
         return true;
