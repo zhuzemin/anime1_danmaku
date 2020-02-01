@@ -4,19 +4,15 @@
 // @supportURL  https://github.com/zhuzemin
 // @description anime1.me / video.eyny.com / www.tucao.one 显示/发送弹幕(bilibili.com / ani.gamer.com.tw / acfun.cn)
 // @include     https://anime1.me/*
-// @exclude     https://anime1.me/
 // @include     https://i.animeone.me/*
 // @include     https://v.anime1.me/watch?v=*
-// @include     http://video.eyny.com/*
-// @exclude     http://video.eyny.com/channel/*
-// @exclude     http://video.eyny.com/en/tag/*
-// @exclude     http://video.eyny.com/en/playlist?list=*
-// @include     http://www.bilibili.com/video/av*
+// @include     http://video.eyny.com/watch?v=*
+// @include     http://video.eyny.com/*/watch?v=*
 // @include     http://bangumi.bilibili.com/movie/*
 // @include     https://www.bilibili.com/video/av*
 // @include     https://www.bilibili.com/bangumi/play/*
 // @include     https://www.tucao.one/play/*
-// @version     3.21
+// @version     3.4
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -35,7 +31,7 @@
 // @connect-src anime1.me
 // ==/UserScript==
 var cfg = {
-    'debug': false
+    'debug': true
 }
 var debug = cfg.debug ? console.log.bind(console)  : function () {
 };
@@ -72,8 +68,9 @@ var abp=null;
 var SearchFinished=false;
 var IsDownload=false;
 var matching=/(https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=(\d*)|(http:\/\/danmu\.aixifan\.com\/V2\/\d*\?pageSize=500&pageNo=1)/;
-var InputPlaceholder='Leave blank or, https://api.bilibili.com...?oid=xxxxxx, https://ani.gamer.com.tw...?sn=xxxxxx, http://danmu.aixifan.com/V2/xxxxxx?pageSize=...';
-var InputPlaceholderSearch='Enter title for search or, https://api.bilibili.com...?oid=xxxxxx, https://ani.gamer.com.tw...?sn=xxxxxx, http://danmu.aixifan.com/V2/xxxxxx?pageSize=...';
+var MatchingWithTitle=/\[.*\] \[(.*)\] \[(.*)\] - ((https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=(\d*)|(http:\/\/danmu\.aixifan\.com\/V2\/\d*\?pageSize=500&pageNo=1))/;
+var InputPlaceholder='Leave blank or, https://api.bilibili.com...?oid=******, https://ani.gamer.com.tw...?sn=******, http://danmu.aixifan.com/V2/******?pageSize=...';
+var InputPlaceholderSearch='Enter title for search or, https://api.bilibili.com...?oid=******, https://ani.gamer.com.tw...?sn=******, http://danmu.aixifan.com/V2/******?pageSize=...';
 class ObjectABP{
     constructor(VideoContainer,video,comments,width,height) {
         this.VideoContainer = VideoContainer;
@@ -100,11 +97,15 @@ class ObjectRequest{
 }
 
 var messages=[
-    ["[Update] half automatically search Danmaku in video.eyny.com ",5000,3],
-    ["[Notice] Feedbak: QQ Group: 32835999, I like to hear some review.^_^",5000,5],
-    ["[Notice] Open Disqus in anime1.me: !comment",5000,10],
-    ["[Notice] Danmaku post command: !dm:xxxxxx",5000,10],
-    ["[Notice] Danmaku speed command: !dmspd:150",5000,10]
+    ["[Update] Set alias to search: !alias",5000,3],
+    ["[Update] Half automatically search Danmaku in video.eyny.com ",5000,2],
+    ["[Notice] Feedbak: QQ Group: 32835999, I like to hear some review.^_^",8000,5],
+    ["[Notice] Search current Anime theme song: !music",5000,2],
+    ["[Notice] Open current Anime wiki page: !wiki",5000,2],
+    ["[Notice] Open this userscript greasyfork page: !fork",5000,2],
+    ["[Notice] Open Disqus(anime1.me): !comment",5000,2],
+    ["[Notice] Danmaku post command: !dm:******",5000,3],
+    ["[Notice] Danmaku speed command: !dmspd:150",5000,3]
 ];
 
 
@@ -139,17 +140,30 @@ function isMobile(){var e,t=!1;return e=navigator.userAgent||navigator.vendor||w
 function init(){
     debug("init");
     if(window.location.href.includes("bilibili.com")){
-        DisplayInput('https://api.bilibili.com...?oid=xxxxxx');
+        DisplayInput('https://api.bilibili.com...?oid=******');
         CreateButton('Detect cid',function () {
             var cid;
             if(window.location.href.includes("bangumi")){
+                title=unsafeWindow.__INITIAL_STATE__.epInfolongTitle;
+                EpisodeCurrent=unsafeWindow.__INITIAL_STATE__.epInfo.epInfo;
                 cid=unsafeWindow.__INITIAL_STATE__.epInfo.cid;
             }
             else if(window.location.href.includes("av")){
-                cid=unsafeWindow.__INITIAL_STATE__.videoData.cid;
+                title=unsafeWindow.__INITIAL_STATE__.videoData.title;
+                var EpisodeMatched=window.location.href.match(/\?p=(\d{1,2})/);
+                if(EpisodeMatched!=null){
+                    var EpisodeNum=parseInt(EpisodeMatched[1]);
+                    EpisodeCurrent=unsafeWindow.__INITIAL_STATE__.videoData.pages[EpisodeNum-1].part;
+                    cid=unsafeWindow.__INITIAL_STATE__.videoData.pages[EpisodeNum-1].cid;
+                }
+                else{
+                    EpisodeCurrent=unsafeWindow.__INITIAL_STATE__.videoData.pages[0].part;
+                    cid=unsafeWindow.__INITIAL_STATE__.videoData.pages[0].cid;
+
+                }
 
             }
-            var href="https://api.bilibili.com/x/v1/dm/list.so?oid="+cid;
+            var href="[bilibili] ["+title+"] ["+EpisodeCurrent+"] - https://api.bilibili.com/x/v1/dm/list.so?oid="+cid;
             debug("DanmakuLink: "+href);
             input.value=href;
 
@@ -172,7 +186,7 @@ function init(){
                     var array=title.innerText.match(/(.*)\s\[(\d*)\]/);
                     title=array[1];
                     EpisodeCurrent=array[2];
-                    bahamut(title,EpisodeCurrent);
+                    bahamut();
                     var CheckValue=setInterval(function () {
                         if(SearchFinished&&input.value.match(matching)){
                             DanmakuDownloaderInit();
@@ -186,7 +200,13 @@ function init(){
                         }
                     },2000);
                 }
-                else if(input.value.match(matching)!=null&&(datalist==null||SearchFinished)) {
+                else if((input.value.match(matching)!=null||input.value.match(MatchingWithTitle))&&(datalist==null||SearchFinished)) {
+                    var ManualInput=input.value.match(MatchingWithTitle);
+                    if(ManualInput!=null){
+                        title=ManualInput[1];
+                        EpisodeCurrent=ManualInput[2].match(/(\d{1,4})/)[1];
+                        debug('title: '+title+'&EpisodeCurrent: '+EpisodeCurrent);
+                    }
                     GM_setValue("DanmakuLink", input.value);
                     input.value="Done, now you can open Player.";
                 }
@@ -219,7 +239,7 @@ function init(){
                 debug("title: "+title);
                 EpisodeCurrent=arr[2];
                 debug("EpisodeCurrent: "+EpisodeCurrent);
-                bahamut(title,EpisodeCurrent);
+                bahamut();
                 var CheckValue=setInterval(function () {
                     if(SearchFinished&&input.value.match(matching)){
                         DanmakuDownloaderInit();
@@ -233,7 +253,13 @@ function init(){
                     }
                 },2000);
             }
-            else if(input.value.match(matching)!=null&&(datalist==null||SearchFinished)) {
+            else if((input.value.match(matching)!=null||input.value.match(MatchingWithTitle))&&(datalist==null||SearchFinished)) {
+                var ManualInput=input.value.match(MatchingWithTitle);
+                if(ManualInput!=null){
+                    title=ManualInput[1];
+                    EpisodeCurrent=ManualInput[2].match(/(\d{1,4})/)[1];
+                    debug('title: '+title+'&EpisodeCurrent: '+EpisodeCurrent);
+                }
                 GetDanmaku(eyny);
             }
         });
@@ -257,7 +283,7 @@ function init(){
                 var array=title.match(/【.*】(.*)\s(\d{1,4})/);
                 title=array[1];
                 EpisodeCurrent=array[2];
-                bahamut(title,EpisodeCurrent);
+                bahamut();
                 var CheckValue=setInterval(function () {
                     if(SearchFinished&&input.value.match(matching)){
                         DanmakuDownloaderInit();
@@ -271,7 +297,13 @@ function init(){
                     }
                 },2000);
             }
-            else if(input.value.match(matching)!=null&&(datalist==null||SearchFinished)) {
+            else if((input.value.match(matching)!=null||input.value.match(MatchingWithTitle))&&(datalist==null||SearchFinished)) {
+                var ManualInput=input.value.match(MatchingWithTitle);
+                if(ManualInput!=null){
+                    title=ManualInput[1];
+                    EpisodeCurrent=ManualInput[2].match(/(\d{1,4})/)[1];
+                    debug('title: '+title+'&EpisodeCurrent: '+EpisodeCurrent);
+                }
                 GetDanmaku(TucaoAlternate);
             }
         });
@@ -376,11 +408,12 @@ function TucaoAlternate(comments) {
 
 
 //search danmaku
-function bahamut(title,EpisodeCurrent){
+function bahamut(){
+    CheckAlias('ani.gamer.com.tw');
+
     var href="https://ani.gamer.com.tw/search.php?kw="+encodeURI(simplized(title,"s2t"));
     var search=new ObjectRequest(href);
     var SearchResult;
-
     if(datalist==null) {
         datalist = document.createElement("datalist");
         datalist.id = "result";
@@ -423,7 +456,7 @@ function bahamut(title,EpisodeCurrent){
                             href = episode.firstChild.href;
                             href = href.replace(window.location.href, "https://ani.gamer.com.tw/animeVideo.php");
                             debug(href);
-                            SearchResult = "Search Result: [Bahamut] " + SearchResultTitle + " "+episode.innerText + " - " + href;
+                            SearchResult = "Search Result: [Bahamut] [" + SearchResultTitle + "] ["+episode.innerText + "] - " + href;
                         }
                     }
                 }
@@ -434,7 +467,8 @@ function bahamut(title,EpisodeCurrent){
     });
 }
 
-function bilibili(title,EpisodeCurrent) {
+function bilibili() {
+    CheckAlias('bilibili');
     var href="https://search.bilibili.com/bangumi?keyword="+encodeURI(simplized(title));
     var search=new ObjectRequest(href);
     var SearchResult;
@@ -473,7 +507,7 @@ function bilibili(title,EpisodeCurrent) {
                         if(parseInt(epInfo.title.match(/(\d{1,4})/)[1]) == parseInt(EpisodeCurrent)){
                             cid=epInfo.cid;
                             var href="https://api.bilibili.com/x/v1/dm/list.so?oid="+cid;
-                            SearchResult = "Search Result: [Bilibili] "+SearchResultTitle+ " "+epInfo.title+" - "+href;
+                            SearchResult = "Search Result: [Bilibili] ["+SearchResultTitle+ "] ["+epInfo.title+"] - "+href;
                             break;
                         }
 
@@ -493,7 +527,8 @@ function bilibili(title,EpisodeCurrent) {
 
 }
 
-function TucaoSearch(title,EpisodeCurrent) {
+function TucaoSearch() {
+    CheckAlias('tucao.one');
     var href="https://www.tucao.one/index.php?m=search&c=index&a=init2&catid=24&time=all&order=inputtime&username=&tag=&q="+encodeURI(simplized(title)+"+"+EpisodeCurrent);
     var search=new ObjectRequest(href);
     var SearchResult;
@@ -543,7 +578,8 @@ function TucaoSearch(title,EpisodeCurrent) {
 
 }
 
-function acfun(title,EpisodeCurrent){
+function acfun(){
+    CheckAlias('acfun');
     var href="https://www.acfun.cn/rest/pc-direct/search/bgm?keyword="+encodeURI(simplized(title))+"&pCursor=1&requestId=";
     var search=new ObjectRequest(href);
     var SearchResult;
@@ -579,7 +615,7 @@ function acfun(title,EpisodeCurrent){
                         var SearchResultTitle = dom.querySelector("h2.title").textContent;
                         debug('SearchResultTitle: ' + SearchResultTitle);
                         href = 'http://danmu.aixifan.com/V2/' + videoId + '?pageSize=500&pageNo=1';
-                        SearchResult = "Search Result: [Acfun] " + SearchResultTitle + " " + item.episodeName + " - " + href;
+                        SearchResult = "Search Result: [Acfun] [" + SearchResultTitle + "] [" + item.episodeName + "] - " + href;
                         break;
                     }
                 }
@@ -590,7 +626,8 @@ function acfun(title,EpisodeCurrent){
     });
 }
 
-function Anime1Comment(title,EpisodeCurrent){
+function Anime1Comment(){
+    CheckAlias('anime1.me');
     var href="https://anime1.me/?s="+encodeURI(simplized(title)+" "+pad(EpisodeCurrent,2));
     var search=new ObjectRequest(href);
     var SearchResult;
@@ -659,7 +696,7 @@ function InsertOption(value) {
         GM_setValue("DanmakuLinkTucao", value);
 
     }
-    else  if(value.includes("Failed")&&input.value=="Searching..."){
+    else  if(value.includes("Failed")&&input.value=="Searching..."&&SearchFinished){
         input.value = "Search Result: All Failed.";
 
     }
@@ -720,6 +757,35 @@ function AcfunParse(AcfunDanmaku){
 function SearchBilibili() {
     var title=document.title.replace(" - EYNY","").replace(" – Anime1.me 動畫線上看","").match(/(.*)\s(\[(\d*)\])?/)[1];
     window.open("https://search.bilibili.com/all?keyword="+simplized(title));
+}
+
+function CheckAlias(url) {
+    var aliasList=GM_getValue('AliasSetting')||null;
+    if(aliasList!=null){
+        var site;
+        if(url.includes('acfun')){
+            site='acfun';
+        }
+        else if(url.includes('bilibili')){
+            site="bilibili";
+        }
+        else if(url.includes('ani.gamer.com.tw')){
+            site="bahamut";
+        }
+        else if(url.includes('anime1.me')){
+            site="anime1";
+        }
+        else if(url.includes('tucao.one')){
+            site="tucao";
+        }
+        aliasList=JSON.parse(aliasList);
+        if (aliasList[title]!=undefined){
+            if(aliasList[title][site]!=undefined){
+                title=aliasList[title][site];
+                debug(title);
+            }
+        }
+    }
 }
 
 
@@ -852,9 +918,43 @@ function pad(num, n) {
     return num;
 }
 
+function request(object,func) {
+    var retries = 3;
+    GM_xmlhttpRequest({
+        method: object.method,
+        url: object.url,
+        data: object.data,
+        headers: object.headers,
+        overrideMimeType: object.charset,
+        timeout:120000,
+        //synchronous: true
+        onload: function (responseDetails) {
+            debug(responseDetails);
+            if (responseDetails.status != 200&&responseDetails.status != 302) {
+                // retry
+                if (retries--) {          // *** Recurse if we still have retries
+                    setTimeout(request,2000);
+                    return;
+                }
+            }
+            //Dowork
+            func(responseDetails,object.other);
+        },
+        ontimeout: function (responseDetails) {
+            debug(responseDetails);
+            //Dowork
+            func(responseDetails,object.other);
 
+        },
+        ononerror: function (responseDetails) {
+            debug(responseDetails);
+            //Dowork
+            func(responseDetails,object.other);
 
-//core
+        }
+    })
+}
+
 function setUserPref(varName, defaultVal, menuText, promtText, sep){
     GM_registerMenuCommand(menuText, function() {
         var val = prompt(promtText, GM_getValue(varName, defaultVal));
@@ -872,6 +972,10 @@ function setUserPref(varName, defaultVal, menuText, promtText, sep){
         //else location.reload();
     });
 }
+
+
+
+//core
 
 function DanmakuPost(comment){
     var cid=GM_getValue("DanmakuLinkTucao").match(/https:\/\/www\.tucao\.one\/index\.php\?m=mukio&c=index&a=init&playerID=(\d*-\d*-\d*-\d*)/)[1];
@@ -955,46 +1059,10 @@ function MessagePush(messages) {
 
 }
 
-function request(object,func) {
-    var retries = 3;
-    GM_xmlhttpRequest({
-        method: object.method,
-        url: object.url,
-        data: object.data,
-        headers: object.headers,
-        overrideMimeType: object.charset,
-        timeout:120000,
-        //synchronous: true
-        onload: function (responseDetails) {
-            debug(responseDetails);
-            if (responseDetails.status != 200&&responseDetails.status != 302) {
-                // retry
-                if (retries--) {          // *** Recurse if we still have retries
-                    setTimeout(request,2000);
-                    return;
-                }
-            }
-            //Dowork
-            func(responseDetails,object.other);
-        },
-        ontimeout: function (responseDetails) {
-            debug(responseDetails);
-            //Dowork
-            func(responseDetails,object.other);
-
-        },
-        ononerror: function (responseDetails) {
-            debug(responseDetails);
-            //Dowork
-            func(responseDetails,object.other);
-
-        }
-    })
-}
-
 function ABP_Init(object){
     try{
         debug("ABP Init");
+        //try ger value of danmaku speed
         var DanmakuSpeed;
         try{
             DanmakuSpeed=parseInt(GM_getValue("DanmakuSpeed").trim());
@@ -1002,12 +1070,14 @@ function ABP_Init(object){
             debug("Not set GM_Value.");
         }
         debug("DanmakuSpeed: " + DanmakuSpeed);
+        //insert css
         var link=document.createElement("link");
         link.setAttribute("rel","stylesheet");
         link.setAttribute("type","text/css");
         link.setAttribute("href","https://jabbany.github.io/ABPlayerHTML5/dist/css/base.min.css");
         var head=document.querySelector("head");
         head.insertBefore(link,null);
+        //abplayer init
         abp=ABP.create(object.VideoContainer, {
             "src":{
                 "playlist":[
@@ -1025,9 +1095,11 @@ function ABP_Init(object){
         var ABP_Text=ABP_Unit.querySelector("div.ABP-Text");
         var ABP_Video=ABP_Unit.querySelector("div.ABP-Video");
         var ButtonABP_Play=ABP_Unit.querySelector("div.button.ABP-Play");
+        //click video play/pause
         ABP_Video.addEventListener("click",function () {
             ButtonABP_Play.click();
         });
+        //mouse not move then hide control bar
         var timeout;
         var mousemove=function(){
             ABP_Control.style=" display: block;"
@@ -1037,32 +1109,48 @@ function ABP_Init(object){
             timeout = setTimeout(function(){
                 ABP_Control.style=" display: none;";
                 ABP_Text.style=" display: none;";
-            },2000);
+            },1000);
 
         };
+        //fullscreen button add event
         var ButtonFullscreen_ABP=ABP_Unit.querySelector("div.button.ABP-FullScreen");
         ButtonFullscreen_ABP.addEventListener("click",function (){
+            //desktop fullscreen
             toggleFullScreen();
             //ABP_Video.style.width=ABP_Unit.offsetWidth+"px";
+            //make video fit screen
             setTimeout(function(){
                 ABP_Video.style.height=ABP_Unit.offsetHeight+"px";
 
             },500);
-            if(fullscreen){
-                debug("addLisenerMousemove: true");
-                ABP_Video.addEventListener("mousemove",mousemove);
-            }
-            else {
-                debug("addLisenerMousemove: false");
-                ABP_Video.removeEventListener("mousemove",mousemove);
-                clearTimeout(timeout);
-            }
         });
+        //trigger hide control bar
+        ABP_Control.addEventListener('mouseover',function () {
+            ABP_Video.removeEventListener("mousemove",mousemove);
+            clearTimeout(timeout);
+
+        });
+        ABP_Text.addEventListener('mouseover',function () {
+            ABP_Video.removeEventListener("mousemove",mousemove);
+            clearTimeout(timeout);
+
+        });
+        ABP_Control.addEventListener('mouseout',function () {
+            ABP_Video.addEventListener("mousemove",mousemove);
+
+        });
+        ABP_Text.addEventListener('mouseout',function () {
+            ABP_Video.addEventListener("mousemove",mousemove);
+
+        });
+        //setting danmaku speed
         if (DanmakuSpeed != undefined&&DanmakuSpeed!=NaN&&DanmakuSpeed>=100&&DanmakuSpeed<=200) {
             debug("DanmakuSpeed: " + DanmakuSpeed);
             abp.cmManager.options.scroll.scale=DanmakuSpeed/100;
         }
+        //input add event
         abp.txtText.addEventListener("keyup",InputLisener);
+        //trigger insert tucao.one danmaku(and enable danmaku post function)
         if(TucaoEnable&&title!=null&&EpisodeCurrent!=null){
             TucaoSearch(title,EpisodeCurrent);
 
@@ -1071,6 +1159,7 @@ function ABP_Init(object){
             messages.push(['[Error] tucao.one search failed, "!dm:xxx" unavailable.',5000,null]);
 
         }
+        //trigger disqus function
         if(Anime1CommentEnable&&!window.location.href.includes("anime1.me")&&title!=null&&EpisodeCurrent!=null){
             Anime1Comment(title,EpisodeCurrent);
         }
@@ -1078,6 +1167,7 @@ function ABP_Init(object){
             messages.push(['[Error] anime1.me search failed, "!comment" unavailable.',5000,null]);
 
         }
+        //trigger message push function
         if(PushEnable){
             var CheckValue=setInterval(function () {
                 if(
@@ -1422,6 +1512,58 @@ function InputLisener(k) {
                                 abp.createPopup('[Error] anime1.me search failed, "!comment" unavailable.', 2000);
                             }
 
+                        }
+                    }
+                        break;
+                    case "music": {
+                        window.open("https://music.163.com/#/search/m/?s="+encodeURI(title));
+                    }
+                        break;
+                    case "wiki": {
+                        window.open("https://zh.wikipedia.org/wiki/"+encodeURI(title));
+                    }
+                        break;
+                    case "fork": {
+                        window.open("https://greasyfork.org/en/scripts/395158-anime1-danmaku");
+                    }
+                        break;
+                    case "alias": {
+                        var value=GM_getValue("AliasSetting")||null;
+                        if (commandPrompts.length < 1) {
+                            abp.createPopup("Current alias setting: "+value, 10000);
+                        }
+                        else {
+                            if(commandPrompts[0]=="null"){
+                                GM_setValue('AliasSetting','');
+                            }
+                            else {
+                                var matched=commandPrompts[0].match(/\{\{(\w*)\}\}/);
+                                if(matched!=null){
+                                    var site=matched[1].toLowerCase();
+                                    if(['acfun','bilibili','tucao','bahamut','anime1'].includes(site)){
+                                        var alias=commandPrompts[0].replace(matched[0],"");
+
+                                        var AliasSetting;
+                                        if(value==null){
+                                            AliasSetting={};
+                                        }
+                                        else{
+                                            AliasSetting=JSON.parse(value);
+                                        }
+                                        if(AliasSetting[title]==undefined){
+                                            AliasSetting[title]={};
+                                        }
+                                        AliasSetting[title][site]=alias;
+                                        GM_setValue('AliasSetting',JSON.stringify(AliasSetting));
+                                        abp.createPopup("Alias saved.", 2000);
+                                    }
+                                    else{
+                                        abp.createPopup("[Error] site wrong. [acfun|bilibili|tucao|bahamut|anime1]", 5000);
+
+                                    }
+                                }
+
+                            }
                         }
                     }
                         break;
