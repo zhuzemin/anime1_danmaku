@@ -12,7 +12,7 @@
 // @include     https://www.bilibili.com/video/av*
 // @include     https://www.bilibili.com/bangumi/play/*
 // @include     https://www.tucao.one/play/*
-// @version     3.6
+// @version     3.61
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -142,12 +142,12 @@ function isMobile(){var e,t=!1;return e=navigator.userAgent||navigator.vendor||w
 function init(){
     debug("init");
     if(window.location.href.includes("bilibili.com")){
-        DisplayInput('https://api.bilibili.com...?oid=******');
+        DisplayInput('');
         CreateButton('Detect cid',function () {
             var cid;
             if(window.location.href.includes("bangumi")){
-                title=unsafeWindow.__INITIAL_STATE__.epInfolongTitle;
-                EpisodeCurrent=unsafeWindow.__INITIAL_STATE__.epInfo.epInfo;
+                title=unsafeWindow.__INITIAL_STATE__.h1Title;
+                EpisodeCurrent=unsafeWindow.__INITIAL_STATE__.epInfo.titleFormat;
                 cid=unsafeWindow.__INITIAL_STATE__.epInfo.cid;
             }
             else if(window.location.href.includes("av")){

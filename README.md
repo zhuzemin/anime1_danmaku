@@ -30,7 +30,7 @@ Other function:
 Notice:
 *Post Danmaku work base "www.tucao.one", Danmaku from "tucao.one" will add mark "[www.tucao.one]".
 *Double click Input will show all search result, you can select one to display(or download).
-*you can not use "Search Danmaku", instead paste "url" in Input, then will directly Load Player.
+*you can don't use "Search Danmaku", instead paste "url" in Input, then will directly Load Player.
 "url" like:
 	https://api.bilibili.com/x/v1/dm/list.so?oid=******,
 	https://ani.gamer.com.tw/animeVideo.php?sn=******
