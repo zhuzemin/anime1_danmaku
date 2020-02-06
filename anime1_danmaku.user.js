@@ -16,7 +16,7 @@
 // @include     https://www.bilibili.com/video/av*
 // @include     https://www.bilibili.com/bangumi/play/*
 // @include     https://www.tucao.one/play/*
-// @version     3.61
+// @version     3.7
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -33,6 +33,9 @@
 // @connect-src www.acfun.cn
 // @connect-src danmu.aixifan.com
 // @connect-src anime1.me
+// @connect-src zh.wikipedia.org
+// @connect-src greasyfork.org
+// @connect-src www.pixiv.net
 // ==/UserScript==
 var cfg = {
     'debug': false
@@ -102,16 +105,15 @@ class ObjectRequest{
 
 var currentSite=getLocation(window.location.href).hostname;;
 var messages=[
-    ["[Update] command: !alias changed, get more detail from home page(!fork).",5000,3],
-    ["[Notice] Set alias to search: !alias",5000,3],
-    ["[Notice] Half automatically search Danmaku in video.eyny.com ",5000,2],
-    ["[Notice] Feedbak: QQ Group: 32835999, I like to hear some review.^_^",8000,5],
+    ["[Update] v3.7: a secret command for who rating this userscript: !secret",5000,5],
+    ["[Notice] Danmaku post command: !dm:******",5000,3],
+    ["[Notice] Danmaku speed command: !dmspd:150",5000,2],
     ["[Notice] Search current Anime theme song: !music",5000,2],
     ["[Notice] Open current Anime wiki page: !wiki",5000,2],
-    ["[Notice] Open this userscript greasyfork page: !fork",5000,2],
     ["[Notice] Open Disqus(anime1.me): !comment",5000,2],
-    ["[Notice] Danmaku post command: !dm:******",5000,3],
-    ["[Notice] Danmaku speed command: !dmspd:150",5000,3]
+    ["[Notice] Set alias for search: !alias",5000,2],
+    ["[Notice] Open this userscript greasyfork page: !fork",5000,2],
+    ["[Notice] Feedbak: QQ Group: 32835999, I like to hear some review.^_^",8000,5]
 ];
 
 
@@ -423,8 +425,7 @@ function TucaoAlternate(comments) {
 
 //search danmaku
 function bahamut(){
-    siteMapping("bahamut",CheckAlias);
-
+    var title=CheckAlias('ani.gamer.com.tw');
     var href="https://ani.gamer.com.tw/search.php?kw="+encodeURI(simplized(title,"s2t"));
     var search=new ObjectRequest(href);
     var SearchResult;
@@ -482,7 +483,7 @@ function bahamut(){
 }
 
 function bilibili() {
-    siteMapping("bilibili",CheckAlias);
+    var title=CheckAlias('search.bilibili.com');
     var href="https://search.bilibili.com/bangumi?keyword="+encodeURI(simplized(title));
     var search=new ObjectRequest(href);
     var SearchResult;
@@ -542,7 +543,7 @@ function bilibili() {
 }
 
 function TucaoSearch() {
-    siteMapping('tucao',CheckAlias);
+    var title=CheckAlias('www.tucao.one');
     var href="https://www.tucao.one/index.php?m=search&c=index&a=init2&catid=24&time=all&order=inputtime&username=&tag=&q="+encodeURI(simplized(title)+"+"+EpisodeCurrent);
     var search=new ObjectRequest(href);
     var SearchResult;
@@ -593,7 +594,7 @@ function TucaoSearch() {
 }
 
 function acfun(){
-    siteMapping('acfun',CheckAlias);
+    var title=CheckAlias('www.acfun.cn');
     var href="https://www.acfun.cn/rest/pc-direct/search/bgm?keyword="+encodeURI(simplized(title))+"&pCursor=1&requestId=";
     var search=new ObjectRequest(href);
     var SearchResult;
@@ -641,7 +642,7 @@ function acfun(){
 }
 
 function Anime1Comment(){
-    siteMapping('anime1',CheckAlias);
+    var title=CheckAlias('anime1.me');
     var href="https://anime1.me/?s="+encodeURI(simplized(title,'s2t')+" "+pad(EpisodeCurrent,2));
     var search=new ObjectRequest(href);
     var SearchResult;
@@ -667,6 +668,83 @@ function Anime1Comment(){
         }
     });
 }
+
+function RatingCheck(){
+    var href="https://greasyfork.org/en/scripts/395158-anime1-danmaku/feedback";
+    var search=new ObjectRequest(href);
+    var SearchResult;
+    request(search,function (responseDetails) {
+        var responseText=responseDetails.responseText;
+        var dom = new DOMParser().parseFromString(responseText, "text/html");
+        var result=dom.querySelector("span.user-profile-link");
+        if(result==null){
+            if(PushEnable){
+                abp.createPopup('[Error] You are not login greasyfork.org',5000);
+
+            }
+        }
+        else {
+            var username=result.textContent;
+            var ratingUser=dom.querySelector('#feedback-favoriters').nextElementSibling.textContent;
+            if(ratingUser.includes(username)){
+                if(PushEnable){
+                    abp.createPopup('[Notice] Thanks for you rating! the secret command is: !pixiv',5000);
+                }
+
+            }
+            else {
+                if(PushEnable){
+                    abp.createPopup('[Error] You are not rating yet, you can rating this script now: !fork',5000);
+                }
+
+            }
+        }
+    });
+}
+
+function GetJaTitle(func=null){
+    var href="https://zh.wikipedia.org/wiki/"+encodeURI(title);
+    var search=new ObjectRequest(href);
+    var SearchResult;
+    request(search,function (responseDetails) {
+        var responseText=responseDetails.responseText;
+        var dom = new DOMParser().parseFromString(responseText, "text/html");
+        var result=dom.querySelector('span[lang=ja]');
+        if(result==null){
+            if(PushEnable){
+                abp.createPopup('[Error] Get Japanese Title failed.',5000);
+
+            }
+        }
+        else {
+            var value=GM_getValue("AliasSetting")||null;
+            var AliasSetting;
+            var site='Japanese Title';
+            if(value==null){
+                AliasSetting={};
+            }
+            else{
+                AliasSetting=JSON.parse(value);
+            }
+            if(AliasSetting[site]==undefined){
+                AliasSetting[site]={};
+            }
+                AliasSetting[site][title] = result.textContent;
+                GM_setValue('AliasSetting',JSON.stringify(AliasSetting));
+                abp.createPopup("Alias saved.", 2000);
+                if(func!=null){
+                    func();
+
+                }
+        }
+    });
+}
+
+function pixiv(){
+    var title=CheckAlias('Japanese Title');
+    window.open("https://www.pixiv.net/en/tags/"+encodeURI(title)+"/artworks?s_mode=s_tag");
+}
+
 
 
 //library
@@ -775,19 +853,21 @@ function SearchBilibili() {
 }
 
 function CheckAlias(site) {
+    var alias=title;
     var aliasList=GM_getValue('AliasSetting')||null;
     if(aliasList!=null){
         aliasList=JSON.parse(aliasList);
         if (aliasList[site]!=undefined){
             if(aliasList[site][title]!=undefined){
-                title=aliasList[site][title];
-                debug(title);
+                alias=aliasList[site][title];
+                debug(alias);
             }
         }
     }
+    return alias;
 }
 
-function siteMapping(url,func) {
+function siteMapping(url) {
     var site;
     if(url.includes('acfun')){
         site='www.acfun.cn';
@@ -803,10 +883,6 @@ function siteMapping(url,func) {
     }
     else if(url.includes('tucao')){
         site="www.tucao.one";
-    }
-    if(func!=null){
-        func(site);
-
     }
     return site;
     
@@ -1616,6 +1692,22 @@ function InputLisener(k) {
                                 }
 
                             }
+                        }
+                    }
+                        break;
+                    case "secret": {
+                        RatingCheck();
+                    }
+                        break;
+                    case "pixiv": {
+
+                        var jtitle=CheckAlias('Japanese Title');
+                        if(jtitle!=title){
+                            pixiv();
+                        }
+                        else {
+                            GetJaTitle(pixiv);
+
                         }
                     }
                         break;

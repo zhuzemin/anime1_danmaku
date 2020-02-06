@@ -53,6 +53,10 @@ then next time you watching "¸èÎè¼¿î®ÏÄÂå¿Ë", the script will try search '¸èÎè¼¿
 *I planning store some alias in script, if you can help me, will be grateful!
 
 
+Secret command:
+17: a secret command for who rating this userscript: !secret
+
+
 
 Feedback:
 QQ Group: 32835999
