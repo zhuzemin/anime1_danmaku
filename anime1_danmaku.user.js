@@ -16,7 +16,7 @@
 // @include     https://www.bilibili.com/video/av*
 // @include     https://www.bilibili.com/bangumi/play/*
 // @include     https://www.tucao.one/play/*
-// @version     3.7
+// @version     3.71
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -418,6 +418,7 @@ function TucaoAlternate(comments) {
 
     var ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
     document.querySelector("#show_share").style.display = "none";
+    document.querySelector("div.footer").style.display = "none";
 
 }
 
