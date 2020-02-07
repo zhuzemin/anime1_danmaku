@@ -68,3 +68,5 @@ QQ Group: 32835999
 ![03](https://github.com/zhuzemin/anime1_danmaku/raw/master/Screenshot-2020-1-31(2).jpg)
 
 ![04](https://github.com/zhuzemin/anime1_danmaku/raw/master/Screenshot-2020-1-31(3).jpg)
+
+![05](https://github.com/zhuzemin/anime1_danmaku/raw/master/2020-02-07_110851.jpg)

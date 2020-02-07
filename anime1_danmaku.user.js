@@ -16,7 +16,9 @@
 // @include     https://www.bilibili.com/video/av*
 // @include     https://www.bilibili.com/bangumi/play/*
 // @include     https://www.tucao.one/play/*
-// @version     3.71
+// @include     https://www.acfun.cn/bangumi/*
+// @include     https://www.acfun.cn/v/*
+// @version     3.8
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -35,7 +37,6 @@
 // @connect-src anime1.me
 // @connect-src zh.wikipedia.org
 // @connect-src greasyfork.org
-// @connect-src www.pixiv.net
 // ==/UserScript==
 var cfg = {
     'debug': false
@@ -105,6 +106,7 @@ class ObjectRequest{
 
 var currentSite=getLocation(window.location.href).hostname;;
 var messages=[
+    ["[Update] v3.8: Now can detect vid in Acfun.",5000,5],
     ["[Update] v3.7: a secret command for who rating this userscript: !secret",5000,5],
     ["[Notice] Danmaku post command: !dm:******",5000,3],
     ["[Notice] Danmaku speed command: !dmspd:150",5000,2],
@@ -172,6 +174,25 @@ function init(){
 
             }
             var href="[bilibili] ["+title+"] ["+EpisodeCurrent+"] - https://api.bilibili.com/x/v1/dm/list.so?oid="+cid;
+            debug("DanmakuLink: "+href);
+            input.value=href;
+
+        });
+    }
+    else if(window.location.href.includes("acfun.cn")){
+        DisplayInput('');
+        CreateButton('Detect vid',function () {
+            var vid;
+            if(window.location.href.includes("bangumi")){
+                vid=unsafeWindow.pageInfo.videoId;
+                title=unsafeWindow.pageInfo.bangumiTitle;
+                EpisodeCurrent=unsafeWindow.pageInfo.episodeName;
+            }
+            else{
+                title=unsafeWindow.pageInfo.title;
+                vid=unsafeWindow.pageInfo.currentVideoId;
+            }
+            var href="[acfun] ["+title+"] ["+EpisodeCurrent+"] - http://danmu.aixifan.com/V2/" + vid + "?pageSize=500&pageNo=1";
             debug("DanmakuLink: "+href);
             input.value=href;
 
