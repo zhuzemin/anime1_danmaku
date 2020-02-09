@@ -649,51 +649,13 @@ var fetchXML = function (cid, callback) {
         });
     }
     else if(cid.includes("danmu.aixifan.com")) {
-        var DanmakuLink = cid.replace(/\d$/, AcfunCount);
-        var danmaku = new ObjectRequest(DanmakuLink);
         //frist request
-        request(danmaku, function (responseDetails) {
+        request(cid, function (responseDetails) {
             var responseText = responseDetails.responseText;
             comments = responseText;
             var json = JSON.parse(comments);
-            AcfunDanmaku = AcfunDanmaku.concat(json);
-            debug("AcfunDanmaku.length: "+AcfunDanmaku[2].length);
-            if(AcfunDanmaku[2].length>=500){
-                AcfunCount++;
-                //second request
-                DanmakuLink = cid.replace(/\d$/, AcfunCount);
-                danmaku.url = DanmakuLink;
-                request(danmaku, function (responseDetails) {
-                    responseText = responseDetails.responseText;
-                    comments = responseText;
-                    json = JSON.parse(comments);
-                    AcfunDanmaku = AcfunDanmaku.concat(json);
-                    debug("AcfunDanmaku.length: "+AcfunDanmaku.length);
-                    if(AcfunDanmaku.length>=1000) {
-                        AcfunCount++;
-                        //thrid request
-                        DanmakuLink = cid.replace(/\d$/, AcfunCount);
-                        danmaku.url = DanmakuLink;
-                        request(danmaku, function (responseDetails) {
-                            responseText = responseDetails.responseText;
-                            comments = responseText;
-                            json = JSON.parse(comments);
-                            AcfunDanmaku = AcfunDanmaku.concat(json);
-                            comments=AcfunParse(AcfunDanmaku);
-                            callback(comments);
-                        });
-                    }
-                    else {
-                        comments=AcfunParse(AcfunDanmaku);
-                        callback(comments);
-                    }
-                });
-
-            }
-            else {
-                comments=AcfunParse(AcfunDanmaku);
+                comments=AcfunParse(json);
                 callback(comments);
-            }
         });
         //reset for player
         AcfunDanmaku = [];
