@@ -34,7 +34,7 @@ Notice:
 "url" like:
 	https://api.bilibili.com/x/v1/dm/list.so?oid=******,
 	https://ani.gamer.com.tw/animeVideo.php?sn=******
-*but because script disn't know title, so other function will be unavailable.
+*but because script doesn't know title, so other function will be unavailable.
 but if input like "Search Result" format:
 	[³ÉÈºÖð¶Ó£¡Î÷¶ÙÑ§Ô°] [µÚ4»°] - http://danmu.aixifan.com/V2/11290983?pageSize=500&pageNo=1
 all function will be available.
@@ -47,7 +47,7 @@ then next search request send to the defined site, the alias will replace origin
 Example: !alias:{{bilibili}}¸èÎè¼¿î®¥·¥ã©`¥í¥Ã¥¯
 then next time you watching "¸èÎè¼¿î®ÏÄÂå¿Ë", the script will try search '¸èÎè¼¿î®¥·¥ã©`¥í¥Ã¥¯'(from bilibili);
 *targetSite: acfun/bilibili/bahamut/tucao/anime1
-14: when before "Load Player" not use "Search Danmaku": !alias:{{targetSite,currentTitle}}targetTitle
+14: use !alias when not use "Search Danmaku": !alias:{{targetSite,currentTitle}}targetTitle
 15: Show all stored alias: !alias
 16: Clear all alias: !alias:null
 *I planning store some alias in script, if you can help me, will be grateful!
