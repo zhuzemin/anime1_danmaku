@@ -18,7 +18,7 @@
 // @include     https://www.tucao.one/play/*
 // @include     https://www.acfun.cn/bangumi/*
 // @include     https://www.acfun.cn/v/*
-// @version     3.9
+// @version     3.91
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -62,7 +62,7 @@ var TucaoEnable=true;
 var PushEnable=true;
 var Anime1CommentEnable=true;
 var Anime1Url;
-var TucaoStatus=false;
+var TucaoStatus=0;
 var Anime1CommentSatus=false;
 var EpisodeCurrent=null;
 var title=null;
@@ -104,8 +104,7 @@ class ObjectRequest{
 
 var currentSite=getLocation(window.location.href).hostname;;
 var messages=[
-    ["[Update] v3.9: Fix: tucao.one danmaku don't show.",5000,5],
-    ["[Update] v3.8: Now can detect vid in Acfun.",5000,5],
+    ["[Update] v3.91: Fix: Player loding faile when not use Serach Danmaku with tucao.one search faile.",5000,5],
     ["[Update] v3.7: a secret command for who rating this userscript: !secret",5000,5],
     ["[Notice] Danmaku post command: !dm:******",5000,3],
     ["[Notice] Danmaku speed command: !dmspd:150",5000,2],
@@ -582,6 +581,8 @@ function TucaoSearch(object) {
             //acfun(title,EpisodeCurrent);
             if(PushEnable){
                 messages.push(['[Error] tucao.one search failed, "!dm" unavailable.',5000,null]);
+                TucaoStatus=2;
+                GetDanmaku(OtherInsertTucao,object);
 
             }
         }
@@ -611,7 +612,7 @@ function TucaoSearch(object) {
 
                     messages.push(['[Notice] tucao.one search success, "!dm" available.',5000,null]);
                 }
-                TucaoStatus=true;
+                TucaoStatus=1;
                     GetDanmaku(OtherInsertTucao,object);
             });
         }
@@ -1188,7 +1189,7 @@ function MessagePush(messages) {
 function ABP_Init(object){
     try{
         //trigger insert tucao.one danmaku(and enable danmaku post function)
-        if(TucaoEnable&&title!=null&&EpisodeCurrent!=null&&!TucaoStatus){
+        if(TucaoEnable&&title!=null&&EpisodeCurrent!=null&&TucaoStatus!=0){
             TucaoSearch(object);
             return;
 
@@ -1297,11 +1298,11 @@ function ABP_Init(object){
         if(PushEnable){
             var CheckValue=setInterval(function () {
                 if(
-                    ((TucaoStatus&&TucaoStatus)&&(Anime1CommentEnable&&Anime1CommentSatus))
+                    ((TucaoEnable&&TucaoStatus!=0)&&(Anime1CommentEnable&&Anime1CommentSatus))
                     ||
-                    ((TucaoStatus&&TucaoStatus)||(Anime1CommentEnable&&Anime1CommentSatus))
+                    ((TucaoEnable&&TucaoStatus!=0)||(Anime1CommentEnable&&Anime1CommentSatus))
                     ||
-                    (!(TucaoStatus&&TucaoStatus)&&!(Anime1CommentEnable&&Anime1CommentSatus))
+                    (!(TucaoEnable&&TucaoStatus!=0)&&!(Anime1CommentEnable&&Anime1CommentSatus))
 
                 ){
                     MessagePush(messages);
@@ -1497,7 +1498,7 @@ function InputLisener(k) {
                         if (commandPrompts.length < 1) {
                             abp.createPopup("Post Danmaku: !dm:****** || !dm:******{{type,size,color}}", 2000);
                         } else {
-                            if (TucaoStatus) {
+                            if (TucaoStatus==1) {
                                 var mode = 1;
                                 var size = 25;
                                 var text = commandPrompts[0];
