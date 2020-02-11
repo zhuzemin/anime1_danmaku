@@ -649,8 +649,8 @@ var fetchXML = function (cid, callback) {
         });
     }
     else if(cid.includes("danmu.aixifan.com")) {
-        //frist request
-        request(cid, function (responseDetails) {
+        var danmaku=new ObjectRequest(cid);
+        request(danmaku, function (responseDetails) {
             var responseText = responseDetails.responseText;
             comments = responseText;
             var json = JSON.parse(comments);
@@ -711,6 +711,10 @@ var getCid = function (callback) {
             //bilibili
             else if (DanmakuLink[1] != null) {
                 cid = DanmakuLink[1];
+            }
+            //acfun
+            else if(DanmakuLink[3]!=null){
+                cid=DanmakuLink[3];
             }
         }
     }
