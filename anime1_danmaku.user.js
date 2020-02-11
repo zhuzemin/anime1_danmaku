@@ -18,7 +18,7 @@
 // @include     https://www.tucao.one/play/*
 // @include     https://www.acfun.cn/bangumi/*
 // @include     https://www.acfun.cn/v/*
-// @version     3.92
+// @version     3.93
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -73,8 +73,8 @@ var fullscreen=false;
 var abp=null;
 var SearchFinished=false;
 var IsDownload=false;
-var matching=/(https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=(\d*)|(http:\/\/danmu\.aixifan\.com\/V2\/\d*\?pageSize=1000&pageNo=1)/;
-var MatchingWithTitle=/\[.*\] \[(.*)\] \[(.*)\] - ((https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=(\d*)|(http:\/\/danmu\.aixifan\.com\/V2\/\d*\?pageSize=1000&pageNo=1))/;
+var matching=/(https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=(\d*)|(http:\/\/danmu\.aixifan\.com\/V2\/\d*\?pageSize=1000&pageNo=1)|(https:\/\/www\.tucao\.one\/index\.php\?m=mukio&c=index&a=init&playerID=\d*-\d*-\d*-\d*)/;
+var MatchingWithTitle=/\[.*\] \[(.*)\] \[(.*)\] - ((https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=(\d*)|(http:\/\/danmu\.aixifan\.com\/V2\/\d*\?pageSize=1000&pageNo=1)|(https:\/\/www\.tucao\.one\/index\.php\?m=mukio&c=index&a=init&playerID=\d*-\d*-\d*-\d*))/;
 var InputPlaceholder='Leave blank or, https://api.bilibili.com...?oid=******, https://ani.gamer.com.tw...?sn=******, http://danmu.aixifan.com/V2/******?pageSize=...';
 var InputPlaceholderSearch='Enter title or, https://api.bilibili.com...?oid=******, https://ani.gamer.com.tw...?sn=******, http://danmu.aixifan.com/V2/******?pageSize=...';
 class ObjectABP{
@@ -104,16 +104,16 @@ class ObjectRequest{
 
 var currentSite=getLocation(window.location.href).hostname;;
 var messages=[
-    ["[Update] v3.92: Fix: if Search Result only Acfun, 'Danmaku Download' button doesn't show.",5000,5],
-    ["[Update] v3.7: a secret command for who rating this userscript: !secret",5000,5],
-    ["[Notice] Danmaku post command: !dm:******",5000,3],
-    ["[Notice] Danmaku speed command: !dmspd:150",5000,2],
-    ["[Notice] Search current Anime theme song: !music",5000,2],
-    ["[Notice] Open current Anime wiki page: !wiki",5000,2],
-    ["[Notice] Open Disqus(anime1.me): !comment",5000,2],
-    ["[Notice] Set alias for search: !alias",5000,2],
-    ["[Notice] Open this userscript greasyfork page: !fork",5000,2],
-    ["[Notice] Feedbak: QQ Group: 32835999, I like to hear some review.^_^",8000,5]
+    ["[Update] v3.93: Add: Display tucao.one Danmaku alone.",5000,2],
+    ["[Notice] a secret command for who rating this userscript: !secret",5000,5],
+    ["[Notice] Post Danmaku : !dm:******",5000,2],
+    ["[Notice] Danmaku speed(100-200): !dmspd:***",5000,2],
+    ["[Notice] Current Anime theme song: !music",5000,2],
+    ["[Notice] Current Anime wiki: !wiki",5000,2],
+    ["[Notice] Current Anime comment: !comment",5000,2],
+    ["[Notice] Set alias: !alias:{{targetSite}}targetTitle",5000,2],
+    ["[Notice] This userscript greasyfork page: !fork",5000,2],
+    ["[Notice] Feedbak: QQ Group: 32835999.",5000,5]
 ];
 
 
@@ -234,6 +234,10 @@ function init(){
                         EpisodeCurrent=ManualInput[2].match(/(\d{1,4})/)[1];
                         debug('title: '+title+'&EpisodeCurrent: '+EpisodeCurrent);
                     }
+                    if(input.value.includes('tucao.one')){
+                        GM_setValue("DanmakuLinkTucao", null);
+                        TucaoStatus=3;
+                    }
                     GM_setValue("DanmakuLink", input.value);
                     input.value="Done, now you can open Player.";
                 }
@@ -290,6 +294,9 @@ function init(){
                     EpisodeCurrent=ManualInput[2].match(/(\d{1,4})/)[1];
                     debug('title: '+title+'&EpisodeCurrent: '+EpisodeCurrent);
                 }
+                if(input.value.includes('tucao.one')){
+                    TucaoStatus=3;
+                }
                 GetDanmaku(eyny);
                 input.value='Player loading...';
             }
@@ -340,6 +347,9 @@ function init(){
                         debug('title: '+title+'&EpisodeCurrent: '+EpisodeCurrent);
                     }
 
+                }
+                if(input.value.includes('tucao.one')){
+                    TucaoStatus=3;
                 }
                 GetDanmaku(TucaoAlternate);
                 input.value='Player loading...';
@@ -465,7 +475,7 @@ function bahamut(){
         if(anime_list==null||anime_list.classList.length>1){
             SearchResult ="Search Result: [Bahamut] Failed.";
             InsertOption( SearchResult);
-            bilibili(title,EpisodeCurrent);
+            bilibili();
         }
         else {
             var li = anime_list.querySelector("li");
@@ -499,7 +509,7 @@ function bahamut(){
                     }
                 }
                 InsertOption( SearchResult);
-                bilibili(title,EpisodeCurrent);
+                bilibili();
             });
         }
     });
@@ -517,8 +527,8 @@ function bilibili() {
         if(bangumi_items.length==0){
             SearchResult ="Search Result: [Bilibili] Failed."
             InsertOption( SearchResult);
-            //TucaoSearch(title,EpisodeCurrent);
-            acfun(title,EpisodeCurrent);
+            TucaoSearch();
+            //acfun();
         }
         else {
             var bangumi_item;
@@ -557,15 +567,15 @@ function bilibili() {
 
                 }
                 InsertOption( SearchResult);
-                //TucaoSearch(title,EpisodeCurrent);
-                acfun(title,EpisodeCurrent);
+                TucaoSearch();
+                //acfun();
             });
         }
     });
 
 }
 
-function TucaoSearch(object) {
+function TucaoSearch() {
     debug('TucaoSearch')
     var title=CheckAlias('www.tucao.one');
     var href="https://www.tucao.one/index.php?m=search&c=index&a=init2&catid=24&time=all&order=inputtime&username=&tag=&q="+encodeURI(simplized(title)+"+"+EpisodeCurrent);
@@ -577,14 +587,13 @@ function TucaoSearch(object) {
         var search_list=dom.querySelector("div.search_list");
         if(search_list==null){
             SearchResult ="Search Result: [Tucao] Failed."
-            //InsertOption( SearchResult);
-            //acfun(title,EpisodeCurrent);
+            InsertOption( SearchResult);
+            acfun();
             if(PushEnable){
                 messages.push(['[Error] tucao.one search failed, "!dm" unavailable.',5000,null]);
                 TucaoStatus=2;
 
             }
-            GetDanmaku(OtherInsertTucao,object);
         }
         else {
             var bangumi_item=search_list.querySelector("div.list");
@@ -605,8 +614,8 @@ function TucaoSearch(object) {
                     var SearchResultTitle=dom.querySelector("h1.show_title").textContent;
                     SearchResult = "Search Result: [Tucao] "+SearchResultTitle+" - "+href;
                 }
-                //InsertOption( SearchResult);
-                //acfun(title,EpisodeCurrent);
+                InsertOption( SearchResult);
+                acfun();
                 GM_setValue('DanmakuLinkTucao',href);
                 if(PushEnable){
 
@@ -614,7 +623,6 @@ function TucaoSearch(object) {
 
                     TucaoStatus=1;
                 }
-                    GetDanmaku(OtherInsertTucao,object);
             });
         }
     });
@@ -810,12 +818,12 @@ function InsertOption(value) {
         var option=document.createElement("option");
         option.value=value;
         datalist.insertBefore(option,null);
-        if(!value.includes("Failed")&&!/www\.tucao\.one/.test(value)){
+        if(!value.includes("Failed")){
             input.value = value;
-        }
-        else if (/www\.tucao\.one/.test(value)){
-            GM_setValue("DanmakuLinkTucao", value);
+            if (/www\.tucao\.one/.test(value)){
+                GM_setValue("DanmakuLinkTucao", value);
 
+            }
         }
         else  if(value.includes("Failed")&&input.value=="Searching..."&&SearchFinished){
             input.value = "Search Result: All Failed.";
@@ -1051,7 +1059,7 @@ function request(object,func) {
         data: object.data,
         headers: object.headers,
         overrideMimeType: object.charset,
-        timeout:10000,
+        timeout:20000,
         //synchronous: true
         onload: function (responseDetails) {
             debug(responseDetails);
@@ -1192,10 +1200,19 @@ function MessagePush(messages) {
 function ABP_Init(object){
     try{
         //trigger insert tucao.one danmaku(and enable danmaku post function)
-        if(TucaoEnable&&title!=null&&EpisodeCurrent!=null&&TucaoStatus==0){
-            TucaoSearch(object);
-            return;
-
+        if(TucaoEnable&&title!=null&&EpisodeCurrent!=null&&TucaoStatus==1){
+            var DanmakuLink;
+            try{
+                DanmakuLink=GM_getValue("DanmakuLinkTucao");
+            }
+            catch(e){
+                debug("OtherInsertTucao Error: "+ e);
+            }
+            debug('DanmakuLink: '+DanmakuLink);
+            if(/(https:\/\/www\.tucao\.one\/index\.php\?m=mukio&c=index&a=init&playerID=\d*-\d*-\d*-\d*)/.test(DanmakuLink)) {
+                GetDanmaku(OtherInsertTucao, object);
+                return;
+            }
         }
         else if(TucaoEnable){
             messages.push(['[Error] tucao.one search failed, "!dm" unavailable.',5000,null]);
@@ -1341,7 +1358,7 @@ function GetDanmaku(func,object=null) {
             DanmakuLink=input.value.match(matching);
         }
     }
-    else if(func.name=="OtherInsertTucao") {
+    else{
         try{
             DanmakuLink=GM_getValue("DanmakuLinkTucao");
             DanmakuLink=DanmakuLink.match(/(https:\/\/www\.tucao\.one\/index\.php\?m=mukio&c=index&a=init&playerID=\d*-\d*-\d*-\d*)/);
@@ -1354,7 +1371,7 @@ function GetDanmaku(func,object=null) {
     debug(DanmakuLink);
     if(DanmakuLink!=null){
         var sn;
-        //not tucao
+        //not OtherInsertTucao
         if(DanmakuLink.length>1){
             //bahamut
             if(DanmakuLink[2]!=null){
@@ -1369,6 +1386,10 @@ function GetDanmaku(func,object=null) {
             //acfun
             else if(DanmakuLink[3]!=null){
                 DanmakuLink=DanmakuLink[3];
+            }
+            //tucao
+            else if(DanmakuLink[4]!=null){
+                DanmakuLink=DanmakuLink[4];
             }
 
         }
@@ -1445,22 +1466,26 @@ function GetDanmaku(func,object=null) {
                 }
                 comments= (new XMLSerializer()).serializeToString(xmlDoc );
             }
-
-            //trigger insert tucao.one danmaku(and enable danmaku post function)
-            if(DanmakuLink.includes("www.tucao.one")){
-                func(comments,object);
-
+            else if(!window.location.href.includes("www.tucao.one")&&DanmakuLink.includes("tucao.one")){
+                var parser = new DOMParser();
+                var xmlDoc   = parser.parseFromString(comments, "application/xml");
+                var nodes=xmlDoc.getElementsByTagName("d");
+                for (var node of nodes) {
+                    //debug(node.innerHTML);
+                    var p=node.getAttribute("p");
+                    //debug('p: '+p);
+                    var params = p.split(",");
+                    var time=params[0];
+                    p=p.replace(time,parseFloat(time)-parseFloat(TucaoDelay));
+                    //debug('p: '+p);
+                    node.setAttribute('p',p);
+                }
+                comments= (new XMLSerializer()).serializeToString(xmlDoc );
             }
-            else {
 
-                //debug("Comments: " + comments);
-                func(comments);
-            }
+            func(comments,object);
         });
         return true;
-    }
-    else {
-        return false;
     }
 }
 
