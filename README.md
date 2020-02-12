@@ -4,7 +4,7 @@ Compatibility:
 Firefox/Chrome,
 Greasemonkey/Tampermonkey
 
-This script can display and post Danmaku in "anime1.me" / "video.eyny.com" / "www.tucao.one", 
+This script display and post Danmaku in "anime1.me" / "video.eyny.com" / "www.tucao.one", 
 Danmaku from "bilibili.com" / "ani.gamer.com.tw" / "acfun.cn".
 
 Usage:
@@ -26,6 +26,7 @@ Other function:
 10: Open this userscript greasyfork page: !fork
 11: Open current Anime wiki page: !wiki
 12: Search current Anime theme song: !music
+13: Danmaku source page: !source
 
 Notice:
 *Post Danmaku work base "www.tucao.one", Danmaku from "tucao.one" will add mark "[www.tucao.one]".
@@ -60,6 +61,15 @@ Secret command:
 
 Feedback:
 QQ Group: 32835999
+
+
+Thanks:
+1.Danmaku Player: "ABPlayer" ---- https://github.com/jabbany/ABPlayerHTML5
+tiny modified: load Danmaku not from url, instead read from string.(*for CROS)
+2.Danmaku download: "Ass Danmaku" ---- https://github.com/tiansh/ass-danmaku
+base early userscript version, make it support new site.
+
+
 
 ![01](https://github.com/zhuzemin/anime1_danmaku/raw/master/Get Danmaku Link.jpg)
 

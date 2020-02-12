@@ -638,7 +638,7 @@ var fetchXML = function (cid, callback) {
             callback(comments);
         });
     }
-    else if(cid.includes("api.bilibili.com")){
+    else if(cid.includes("api.bilibili.com")||cid.includes("www.tucao.one")){
         GM_xmlhttpRequest({
             'method': 'GET',
             'url': cid,

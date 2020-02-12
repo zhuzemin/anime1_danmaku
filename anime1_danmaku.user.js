@@ -18,7 +18,7 @@
 // @include     https://www.tucao.one/play/*
 // @include     https://www.acfun.cn/bangumi/*
 // @include     https://www.acfun.cn/v/*
-// @version     3.93
+// @version     4.0
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -73,6 +73,7 @@ var fullscreen=false;
 var abp=null;
 var SearchFinished=false;
 var IsDownload=false;
+var danmakuSource=null;
 var matching=/(https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=(\d*)|(http:\/\/danmu\.aixifan\.com\/V2\/\d*\?pageSize=1000&pageNo=1)|(https:\/\/www\.tucao\.one\/index\.php\?m=mukio&c=index&a=init&playerID=\d*-\d*-\d*-\d*)/;
 var MatchingWithTitle=/\[.*\] \[(.*)\] \[(.*)\] - ((https:\/\/api\.bilibili\.com\/x\/v1\/dm\/list.so\?oid=\d*)|https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=(\d*)|(http:\/\/danmu\.aixifan\.com\/V2\/\d*\?pageSize=1000&pageNo=1)|(https:\/\/www\.tucao\.one\/index\.php\?m=mukio&c=index&a=init&playerID=\d*-\d*-\d*-\d*))/;
 var InputPlaceholder='Leave blank or, https://api.bilibili.com...?oid=******, https://ani.gamer.com.tw...?sn=******, http://danmu.aixifan.com/V2/******?pageSize=...';
@@ -104,7 +105,7 @@ class ObjectRequest{
 
 var currentSite=getLocation(window.location.href).hostname;;
 var messages=[
-    ["[Update] v3.93: Add: Display tucao.one Danmaku alone.",5000,2],
+    ["[Notice] Danmaku source page: !source",5000,2],
     ["[Notice] a secret command for who rating this userscript: !secret",5000,5],
     ["[Notice] Post Danmaku : !dm:******",5000,2],
     ["[Notice] Danmaku speed(100-200): !dmspd:***",5000,2],
@@ -119,8 +120,175 @@ var messages=[
 
 //require
 // 设置项
-var config={playResX:560,playResY:420,fontlist:["Microsoft YaHei UI","Microsoft YaHei","文泉驿正黑","STHeitiSC","黑体"],font_size:1,r2ltime:8,fixtime:4,opacity:.6,space:0,max_delay:6,bottom:50,use_canvas:null,debug:!1},fillStr=function(t){var n=Array.apply(Array,arguments);return t.replace(/{{([^}]+)}}/g,function(t,e){var r;return n.some(function(t){return r=t[e]}),r||""})},RRGGBB=function(t){var n=Number(t).toString(16).toUpperCase();return(Array(7).join("0")+n).slice(-6)},hexAlpha=function(t){var n=Math.round(255*(1-t)).toString(16).toUpperCase();return Array(3-n.length).join("0")+n},funStr=function(t){return t.toString().split(/\r\n|\n|\r/).slice(1,-1).join("\n")},hypot=Math.hypot?Math.hypot.bind(Math):function(){return Math.sqrt([0].concat(Array.apply(Array,arguments)).reduce(function(t,n){return t+n*n}))},startDownload=function(t,n){var e=new Blob([t],{type:"application/octet-stream"}),r=window.URL.createObjectURL(e),o=document.createElement("a");o.href=r,o.style.display="none",document.body.appendChild(o),o.download=n,o.click(),setTimeout(function(){o.parentNode.removeChild(o)},1e3),document.addEventListener("unload",function(){window.URL.revokeObjectURL(r)})},calcWidth=function(){var t;return null===config.use_canvas&&navigator.platform.match(/linux/i)&&!navigator.userAgent.match(/chrome/i)&&(config.use_canvas=!1),debug("use canvas: %o",!1!==config.use_canvas),!1===config.use_canvas?function(){var t=document.createElement("div");t.setAttribute("style",["all: unset","top: -10000px","left: -10000px","width: auto","height: auto","position: absolute",""].join(" !important; "));var n=function(){document.body.parentNode.appendChild(t)};return document.body?n():document.addEventListener("DOMContentLoaded",n),function(n,e,r){return t.textContent=e,t.style.font="bold "+r+"px "+n,t.clientWidth+config.space}}():(t=document.createElement("canvas").getContext("2d"),function(n,e,r){return t.font="bold "+r+"px "+n,Math.ceil(t.measureText(e).width+config.space)})}(),choseFont=function(t){var n="The quick brown fox jumps over the lazy dog7531902468,.!-，。：！天地玄黄则近道矣",e=["monospace","sans-serif","sans","Symbol","Arial","Comic Sans MS","Fixed","Terminal","Times","Times New Roman","宋体","黑体","文泉驿正黑","Microsoft YaHei"],r=t[t.length-1];return t=t.filter(function(t){var r=e.some(function(e){return function(t,e){return calcWidth(t,n,72)!==calcWidth(e+","+t,n,72)}(e,t)});return debug("font %s: %o",t,r),r}),debug("fontlist: %o",t),t[0]||r},initFont=function(){var t=!1;return function(){t||(t=!0,calcWidth=calcWidth.bind(window,config.font=choseFont(config.fontlist)))}}(),generateASS=function(t,n){var e,r=fillStr(funStr(function(){
-    /*! ASS弹幕文件文件头
+// 设置项
+var config = {
+    'playResX': 560, // 屏幕分辨率宽（像素）
+    'playResY': 420, // 屏幕分辨率高（像素）
+    'fontlist': [ // 字形（会自动选择最前面一个可用的）
+        'Microsoft YaHei UI',
+        'Microsoft YaHei',
+        '文泉驿正黑',
+        'STHeitiSC',
+        '黑体',
+    ],
+    'font_size': 1, // 字号（比例）
+    'r2ltime': 8, // 右到左弹幕持续时间（秒）
+    'fixtime': 4, // 固定弹幕持续时间（秒）
+    'opacity': 0.6, // 不透明度（比例）
+    'space': 0, // 弹幕间隔的最小水平距离（像素）
+    'max_delay': 6, // 最多允许延迟几秒出现弹幕
+    'bottom': 50, // 底端给字幕保留的空间（像素）
+    'use_canvas': null, // 是否使用canvas计算文本宽度（布尔值，Linux下的火狐默认否，其他默认是，Firefox bug #561361）
+    'debug': false, // 打印调试信息
+};
+//var debug = config.debug ? console.log.bind(console)  : function () {};
+// 将字典中的值填入字符串
+var fillStr = function (str) {
+    var dict = Array.apply(Array, arguments);
+    return str.replace(/{{([^}]+)}}/g, function (r, o) {
+        var ret;
+        dict.some(function (i) {
+            return ret = i[o];
+        });
+        return ret || '';
+    });
+};
+// 将颜色的数值化为十六进制字符串表示
+var RRGGBB = function (color) {
+    var t = Number(color).toString(16).toUpperCase();
+    return (Array(7).join('0') + t).slice( - 6);
+};
+// 将可见度转换为透明度
+var hexAlpha = function (opacity) {
+    var alpha = Math.round(255 * (1 - opacity)).toString(16).toUpperCase();
+    return Array(3 - alpha.length).join('0') + alpha;
+};
+// 字符串
+var funStr = function (fun) {
+    return fun.toString().split(/\r\n|\n|\r/).slice(1, - 1).join('\n');
+};
+// 平方和开根
+var hypot = Math.hypot ? Math.hypot.bind(Math)  : function () {
+    return Math.sqrt([0].concat(Array.apply(Array, arguments)).reduce(function (x, y) {
+        return x + y * y;
+    }));
+};
+// 创建下载
+var startDownload = function (data, filename) {
+    var blob = new Blob([data], {
+        type: 'application/octet-stream'
+    });
+    var url = window.URL.createObjectURL(blob);
+    var saveas = document.createElement('a');
+    saveas.href = url;
+    saveas.style.display = 'none';
+    document.body.appendChild(saveas);
+    saveas.download = filename;
+    saveas.click();
+    setTimeout(function () {
+        saveas.parentNode.removeChild(saveas);
+    }, 1000)
+    document.addEventListener('unload', function () {
+        window.URL.revokeObjectURL(url);
+    });
+};
+// 计算文字宽度
+var calcWidth = (function () {
+    // 使用Canvas计算
+    var calcWidthCanvas = function () {
+        var canvas = document.createElement('canvas');
+        var context = canvas.getContext('2d');
+        return function (fontname, text, fontsize) {
+            context.font = 'bold ' + fontsize + 'px ' + fontname;
+            return Math.ceil(context.measureText(text).width + config.space);
+        };
+    }  // 使用Div计算
+
+    var calcWidthDiv = function () {
+        var d = document.createElement('div');
+        d.setAttribute('style', [
+            'all: unset',
+            'top: -10000px',
+            'left: -10000px',
+            'width: auto',
+            'height: auto',
+            'position: absolute',
+            '',
+        ].join(' !important; '));
+        var ld = function () {
+            document.body.parentNode.appendChild(d);
+        }
+        if (!document.body) document.addEventListener('DOMContentLoaded', ld);
+        else ld();
+        return function (fontname, text, fontsize) {
+            d.textContent = text;
+            d.style.font = 'bold ' + fontsize + 'px ' + fontname;
+            return d.clientWidth + config.space;
+        };
+    };
+    // 检查使用哪个测量文字宽度的方法
+    if (config.use_canvas === null) {
+        if (navigator.platform.match(/linux/i) && !navigator.userAgent.match(/chrome/i)) config.use_canvas = false;
+    }
+    debug('use canvas: %o', config.use_canvas !== false);
+    if (config.use_canvas === false) return calcWidthDiv();
+    return calcWidthCanvas();
+}());
+// 选择合适的字体
+var choseFont = function (fontlist) {
+    // 检查这个字串的宽度来检查字体是否存在
+    var sampleText = 'The quick brown fox jumps over the lazy dog' +
+        '7531902468' + ',.!-' + '，。：！' +
+        '天地玄黄' + '则近道矣';
+    // 和这些字体进行比较
+    var sampleFont = [
+        'monospace',
+        'sans-serif',
+        'sans',
+        'Symbol',
+        'Arial',
+        'Comic Sans MS',
+        'Fixed',
+        'Terminal',
+        'Times',
+        'Times New Roman',
+        '宋体',
+        '黑体',
+        '文泉驿正黑',
+        'Microsoft YaHei'
+    ];
+    // 如果被检查的字体和基准字体可以渲染出不同的宽度
+    // 那么说明被检查的字体总是存在的
+    var diffFont = function (base, test) {
+        var baseSize = calcWidth(base, sampleText, 72);
+        var testSize = calcWidth(test + ',' + base, sampleText, 72);
+        return baseSize !== testSize;
+    };
+    var validFont = function (test) {
+        var valid = sampleFont.some(function (base) {
+            return diffFont(base, test);
+        });
+        debug('font %s: %o', test, valid);
+        return valid;
+    };
+    // 找一个能用的字体
+    var f = fontlist[fontlist.length - 1];
+    fontlist = fontlist.filter(validFont);
+    debug('fontlist: %o', fontlist);
+    return fontlist[0] || f;
+};
+// 从备选的字体中选择一个机器上提供了的字体
+var initFont = (function () {
+    var done = false;
+    return function () {
+        if (done) return;
+        done = true;
+        calcWidth = calcWidth.bind(window, config.font = choseFont(config.fontlist)
+        );
+    };
+}());
+var generateASS = function (danmaku, info) {
+    var assHeader = fillStr(funStr(function () { /*! ASS弹幕文件文件头
 [Script Info]
 Title: {{title}}
 Original Script: 根据 {{ori}} 的弹幕信息，由 https://github.com/tiansh/us-danmaku 生成
@@ -136,8 +304,597 @@ Style: Fix,{{font}},25,&H{{alpha}}FFFFFF,&H{{alpha}}FFFFFF,&H{{alpha}}000000,&H{
 Style: R2L,{{font}},25,&H{{alpha}}FFFFFF,&H{{alpha}}FFFFFF,&H{{alpha}}000000,&H{{alpha}}000000,1,0,0,0,100,100,0,0,1,2,0,2,20,20,2,0
 
 [Events]
-Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text      */}),config,n,{alpha:hexAlpha(config.opacity)}),o=function(t){t=100*t^0;var n=[[100,2],[60,2],[60,2],[1/0,0]].map(function(n){var e=t%n[0];return t=(t-e)/n[0],function(t,n){for(t=""+t;t.length<n;)t="0"+t;return t}(e,n[1])}).reverse();return n.slice(0,-1).join(":")+"."+n[3]},i={R2L:(e=function(t){return function(n){return t(n)+function(t){var n="",e=t.color.split(/(..)/).filter(function(t){return t}).map(function(t){return parseInt(t,16)});return"FFFFFF"!==t.color&&(n+="\\c&H"+t.color.split(/(..)/).reverse().join("")),.299*e[0]+.587*e[1]+.114*e[2]<48&&(n+="\\3c&HFFFFFF"),25!==t.size&&(n+="\\fs"+t.size),n}(n)}})(function(t){return"\\move("+[t.poss.x,t.poss.y,t.posd.x,t.posd.y].join(",")+")"}),Fix:e(function(t){return"\\pos("+[t.poss.x,t.poss.y].join(",")+")"})};return r+t.map(function(t){return"Dialogue: "+[0,o(t.stime),o(t.dtime),t.type,",20,20,2,,"].join(",")+"{"+i[t.type](t)+"}"+t.text.replace(/{/g,"｛").replace(/}/g,"｝").replace(/\r|\n/g,"")}).filter(function(t){return t}).join("\n")},normalDanmaku=function(t,n,e,r,o){return function(){var i=[{p:-1/0,m:0,tf:1/0,td:1/0,b:!1},{p:n,m:1/0,tf:1/0,td:1/0,b:!1},{p:n-e,m:n,tf:1/0,td:1/0,b:!0}];return function(e,u,a,c){var f=t/(u+t)*r+e;!function(t,n){i=i.filter(function(e){return e.tf>t||e.td>n})}(e,f);var s=function(t,e,r,u){var a=[];i.forEach(function(o){if(!(o.m>n)){var c=o.m,f=c+t,s=e,m=r;i.forEach(function(t){t.p>=f||t.m<=c||t.b&&u||(s=Math.max(s,t.tf),m=Math.max(m,t.td))}),a.push({p:c,r:Math.max(s-e,m-r)})}}),a.sort(function(t,n){return t.p-n.p});var c=o;return a=a.filter(function(t){return!(t.r>=c||(c=t.r,0))})}(a,e,f,c);if(!s.length)return null;var m=s.map(function(t){return[function(t){return t.r>o?-1/0:1-hypot(t.r/o,t.p/n)*Math.SQRT1_2}(t),t]}).reduce(function(t,n){return t[0]>n[0]?t:n})[1],l=e+m.r,p=u/(u+t)*r+l,d=r+l;return function(t,n,e,r){i.push({p:t,m:n,tf:e,td:r,b:!1})}(m.p,m.p+a,p,d),{top:m.p,time:l}}}}(config.playResX,config.playResY,config.bottom,config.r2ltime,config.max_delay),sideDanmaku=function(t,n,e,r){return function(){var o=[{p:-1/0,m:0,td:1/0,b:!1},{p:t,m:1/0,td:1/0,b:!1},{p:t-n,m:t,td:1/0,b:!0}],i=function(t,n,e,r){var i=e;return o.forEach(function(e){e.p>=n||e.m<=t||e.b&&r||(i=Math.max(i,e.td))}),{r:i-e,p:t,m:n}};return function(n,u,a,c){!function(t){o=o.filter(function(n){return n.td>t})}(n);var f=(a?function(n,e,r){var u=[];return o.forEach(function(o){o.m>t||u.push(i(o.m,o.m+n,e,r))}),u}:function(t,n,e){var r=[];return o.forEach(function(o){o.p<0||r.push(i(o.p-t,o.p,n,e))}),r})(u,n,c);if(!f.length)return null;var s,m,l,p=f.map(function(n){return[function(n,e){if(n.r>r)return-1/0;var o;return 1-(n.r/r*(31/32)+(o=n.p,(e?o:t-o)/t*(1/32)))}(n,a),n]}).reduce(function(t,n){return t[0]>n[0]?t:n})[1];return s=p.p,m=p.m,l=p.r+n+e,o.push({p:s,m:m,td:l,b:!1}),{top:p.p,time:p.r+n}}}}(config.playResY,config.bottom,config.fixtime,config.max_delay),setPosition=function(t){var n=normalDanmaku(),e=sideDanmaku();return t.sort(function(t,n){return t.time-n.time}).map(function(t){var r,o=Math.round(t.size*config.font_size),i=calcWidth(t.text,o);switch(t.mode){case"R2L":return(r=n(t.time,i,o,t.bottom))?(t.type="R2L",t.stime=r.time,t.poss={x:config.playResX+i/2,y:r.top+o},t.posd={x:-i/2,y:r.top+o},t.dtime=config.r2ltime+t.stime,t):null;case"TOP":case"BOTTOM":return function(n){var r=e(t.time,o,n,t.bottom);return r?(t.type="Fix",t.stime=r.time,t.posd=t.poss={x:Math.round(config.playResX/2),y:r.top+o},t.dtime=config.fixtime+t.stime,t):null}("TOP"===t.mode);default:return null}}).filter(function(t){return t}).sort(function(t,n){return t.stime-n.stime})},fetchXML=function(t,n){if(t.includes("ani.gamer.com.tw")){t=t.match(/https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=(\d*)/)[1];(e=new ObjectRequest("https://ani.gamer.com.tw/ajax/danmuGet.php")).method="POST",e.data="sn="+t,request(e,function(t){var e=t.responseText;debug("Comments: "+e);var r=JSON.parse(e);debug("Comments: "+e);var o=(new DOMParser).parseFromString('<?xml version="1.0" encoding="utf-8"?><i></i>',"application/xml"),i=o.getElementsByTagName("i");for(var u of Object.values(r))try{var a,c=o.createElement("d");c.innerHTML=u.text.replace(/[^\u4e00-\u9fa5`~\!@#\$%\^\*\(\)_\+\|\-=\\\{\}\[\]:";'\?,\.\/\w\d<>&\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF\u2605-\u2606\u2190-\u2195\u203B]/g,"").replace("<","&lt;").replace(">","&gt;").replace("&","&amp;"),a=0==u.position?1:2==u.position?4:1==u.position?5:6;var f=u.time/10+","+a+",25,"+parseInt(u.color.match(/#([\d\w]{6})/)[1],16)+",1550236858,0,55f99b31,12108265626271746";c.setAttribute("p",f),i[0].appendChild(c)}catch(t){debug(t+" "+u.text);continue}e=(new XMLSerializer).serializeToString(o),debug("Comments: "+e),n(e)})}else if(t.includes("api.bilibili.com"))GM_xmlhttpRequest({method:"GET",url:t,onload:function(t){var e=t.responseText.replace(/(?:[\0-\x08\x0B\f\x0E-\x1F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])/g,"");n(e)}});else if(t.includes("danmu.aixifan.com")){var e=new ObjectRequest(t);request(e,function(t){var e=t.responseText;comments=e;var r=JSON.parse(comments);comments=AcfunParse(r),n(comments)}),AcfunDanmaku=[],AcfunCount=1}},fetchDanmaku=function(t,n){fetchXML(t,function(t){n(parseXML(t))})},parseXML=function(t){var n=(new DOMParser).parseFromString(t,"text/xml");return Array.apply(Array,n.querySelectorAll("d")).map(function(t){var n=t.getAttribute("p").split(",");return{text:t.textContent,time:Number(n[0]),mode:[void 0,"R2L","R2L","R2L","BOTTOM","TOP"][Number(n[1])],size:Number(n[2]),color:RRGGBB(16777215&parseInt(n[3],10)),bottom:Number(n[5])>0}})},getCid=function(t){debug("get cid...");var n=null;try{n=input.value.match(/.* - (https?:\/\/.*)/)[1]}catch(t){var e=input.value.match(matching);null!=e&&(null!=e[2]?n=e[2]:null!=e[1]?n=e[1]:null!=e[3]&&(n=e[3]))}n?setTimeout(t,0,n||void 0):setTimeout(getCid,100,t)},mina=function(t){getCid(function(n){fetchDanmaku(n=n||t,function(t){var n=null;try{n=input.value.match(/Search Result: (.*) - https?:\/\/.*/)[1]}catch(t){n=document.title}debug("got xml with %d danmaku",t.length);var e=generateASS(setPosition(t),{title:document.title,ori:location.href});startDownload("\ufeff"+e,n+".ass")})})},initButton=function(){var t=!1;return function(){debug("init button"),document.querySelector("body")&&getCid(function(n){debug("cid = %o",n),n&&!t&&(t=!0,fetchDanmaku(n,function(t){CreateButton("Download Danmaku",function(){mina(n)})}))})}}(),DanmakuDownloaderInit=function(){IsDownload=!0,initFont(),initButton()};
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 
+  */
+    }), config, info, {
+        'alpha': hexAlpha(config.opacity)
+    });
+    // 补齐数字开头的0
+    var paddingNum = function (num, len) {
+        num = '' + num;
+        while (num.length < len) num = '0' + num;
+        return num;
+    };
+    // 格式化时间
+    var formatTime = function (time) {
+        time = 100 * time ^ 0;
+        var l = [
+            [100,
+                2],
+            [
+                60,
+                2
+            ],
+            [
+                60,
+                2
+            ],
+            [
+                Infinity,
+                0
+            ]
+        ].map(function (c) {
+            var r = time % c[0];
+            time = (time - r) / c[0];
+            return paddingNum(r, c[1]);
+        }).reverse();
+        return l.slice(0, - 1).join(':') + '.' + l[3];
+    };
+    // 格式化特效
+    var format = (function () {
+        // 适用于所有弹幕
+        var common = function (line) {
+            var s = '';
+            var rgb = line.color.split(/(..)/).filter(function (x) {
+                return x;
+            }).map(function (x) {
+                return parseInt(x, 16);
+            });
+            // 如果不是白色，要指定弹幕特殊的颜色
+            if (line.color !== 'FFFFFF') // line.color 是 RRGGBB 格式
+                s += '\\c&H' + line.color.split(/(..)/).reverse().join('');
+            // 如果弹幕颜色比较深，用白色的外边框
+            var dark = rgb[0] * 0.299 + rgb[1] * 0.587 + rgb[2] * 0.114 < 48;
+            if (dark) s += '\\3c&HFFFFFF';
+            if (line.size !== 25) s += '\\fs' + line.size;
+            return s;
+        };
+        // 适用于从右到左弹幕
+        var r2l = function (line) {
+            return '\\move(' + [
+                line.poss.x,
+                line.poss.y,
+                line.posd.x,
+                line.posd.y
+            ].join(',') + ')';
+        };
+        // 适用于固定位置弹幕
+        var fix = function (line) {
+            return '\\pos(' + [
+                line.poss.x,
+                line.poss.y
+            ].join(',') + ')';
+        };
+        var withCommon = function (f) {
+            return function (line) {
+                return f(line) + common(line);
+            };
+        };
+        return {
+            'R2L': withCommon(r2l),
+            'Fix': withCommon(fix),
+        };
+    }());
+    // 转义一些字符
+    var escapeAssText = function (s) {
+        // "{"、"}"字符libass可以转义，但是VSFilter不可以，所以直接用全角补上
+        return s.replace(/{/g, '｛').replace(/}/g, '｝').replace(/\r|\n/g, '');
+    };
+    // 将一行转换为ASS的事件
+    var convert2Ass = function (line) {
+        return 'Dialogue: ' + [
+                0,
+                formatTime(line.stime),
+                formatTime(line.dtime),
+                line.type,
+                ',20,20,2,,',
+            ].join(',')
+            + '{' + format[line.type](line) + '}'
+            + escapeAssText(line.text);
+    };
+    return assHeader +
+        danmaku.map(convert2Ass).filter(function (x) {
+            return x;
+        }).join('\n');
+};
+/*
+
+下文字母含义：
+0       ||----------------------x---------------------->
+           _____________________c_____________________
+=        /                     wc                      \      0
+|       |                   |--v--|                 wv  |  |--v--|
+|    d  |--v--|               d f                 |--v--|
+y |--v--|  l                                         f  |  s    _ p
+|       |              VIDEO           |--v--|          |--v--| _ m
+v       |              AREA            (x ^ y)          |
+
+v: 弹幕
+c: 屏幕
+
+0: 弹幕发送
+a: 可行方案
+
+s: 开始出现
+f: 出现完全
+l: 开始消失
+d: 消失完全
+
+p: 上边缘（含）
+m: 下边缘（不含）
+
+w: 宽度
+h: 高度
+b: 底端保留
+
+t: 时间点
+u: 时间段
+r: 延迟
+
+并规定
+ts := t0s + r
+tf := wv / (wc + ws) * p + ts
+tl := ws / (wc + ws) * p + ts
+td := p + ts
+
+*/
+// 滚动弹幕
+var normalDanmaku = (function (wc, hc, b, u, maxr) {
+    return function () {
+        // 初始化屏幕外面是不可用的
+        var used = [
+            {
+                'p': - Infinity,
+                'm': 0,
+                'tf': Infinity,
+                'td': Infinity,
+                'b': false
+            },
+            {
+                'p': hc,
+                'm': Infinity,
+                'tf': Infinity,
+                'td': Infinity,
+                'b': false
+            },
+            {
+                'p': hc - b,
+                'm': hc,
+                'tf': Infinity,
+                'td': Infinity,
+                'b': true
+            },
+        ];
+        // 检查一些可用的位置
+        var available = function (hv, t0s, t0l, b) {
+            var suggestion = [
+            ];
+            // 这些上边缘总之别的块的下边缘
+            used.forEach(function (i) {
+                if (i.m > hc) return;
+                var p = i.m;
+                var m = p + hv;
+                var tas = t0s;
+                var tal = t0l;
+                // 这些块的左边缘总是这个区域里面最大的边缘
+                used.forEach(function (j) {
+                    if (j.p >= m) return;
+                    if (j.m <= p) return;
+                    if (j.b && b) return;
+                    tas = Math.max(tas, j.tf);
+                    tal = Math.max(tal, j.td);
+                });
+                // 最后作为一种备选留下来
+                suggestion.push({
+                    'p': p,
+                    'r': Math.max(tas - t0s, tal - t0l),
+                });
+            });
+            // 根据高度排序
+            suggestion.sort(function (x, y) {
+                return x.p - y.p;
+            });
+            var mr = maxr;
+            // 又靠右又靠下的选择可以忽略，剩下的返回
+            suggestion = suggestion.filter(function (i) {
+                if (i.r >= mr) return false;
+                mr = i.r;
+                return true;
+            });
+            return suggestion;
+        };
+        // 添加一个被使用的
+        var use = function (p, m, tf, td) {
+            used.push({
+                'p': p,
+                'm': m,
+                'tf': tf,
+                'td': td,
+                'b': false
+            });
+        };
+        // 根据时间同步掉无用的
+        var syn = function (t0s, t0l) {
+            used = used.filter(function (i) {
+                return i.tf > t0s || i.td > t0l;
+            });
+        };
+        // 给所有可能的位置打分，分数是[0, 1)的
+        var score = function (i) {
+            if (i.r > maxr) return - Infinity;
+            return 1 - hypot(i.r / maxr, i.p / hc) * Math.SQRT1_2;
+        };
+        // 添加一条
+        return function (t0s, wv, hv, b) {
+            var t0l = wc / (wv + wc) * u + t0s;
+            syn(t0s, t0l);
+            var al = available(hv, t0s, t0l, b);
+            if (!al.length) return null;
+            var scored = al.map(function (i) {
+                return [score(i),
+                    i];
+            });
+            var best = scored.reduce(function (x, y) {
+                return x[0] > y[0] ? x : y;
+            }) [1];
+            var ts = t0s + best.r;
+            var tf = wv / (wv + wc) * u + ts;
+            var td = u + ts;
+            use(best.p, best.p + hv, tf, td);
+            return {
+                'top': best.p,
+                'time': ts,
+            };
+        };
+    };
+}(config.playResX, config.playResY, config.bottom, config.r2ltime, config.max_delay));
+// 顶部、底部弹幕
+var sideDanmaku = (function (hc, b, u, maxr) {
+    return function () {
+        var used = [
+            {
+                'p': - Infinity,
+                'm': 0,
+                'td': Infinity,
+                'b': false
+            },
+            {
+                'p': hc,
+                'm': Infinity,
+                'td': Infinity,
+                'b': false
+            },
+            {
+                'p': hc - b,
+                'm': hc,
+                'td': Infinity,
+                'b': true
+            },
+        ];
+        // 查找可用的位置
+        var fr = function (p, m, t0s, b) {
+            var tas = t0s;
+            used.forEach(function (j) {
+                if (j.p >= m) return;
+                if (j.m <= p) return;
+                if (j.b && b) return;
+                tas = Math.max(tas, j.td);
+            });
+            return {
+                'r': tas - t0s,
+                'p': p,
+                'm': m
+            };
+        };
+        // 顶部
+        var top = function (hv, t0s, b) {
+            var suggestion = [
+            ];
+            used.forEach(function (i) {
+                if (i.m > hc) return;
+                suggestion.push(fr(i.m, i.m + hv, t0s, b));
+            });
+            return suggestion;
+        };
+        // 底部
+        var bottom = function (hv, t0s, b) {
+            var suggestion = [
+            ];
+            used.forEach(function (i) {
+                if (i.p < 0) return;
+                suggestion.push(fr(i.p - hv, i.p, t0s, b));
+            });
+            return suggestion;
+        };
+        var use = function (p, m, td) {
+            used.push({
+                'p': p,
+                'm': m,
+                'td': td,
+                'b': false
+            });
+        };
+        var syn = function (t0s) {
+            used = used.filter(function (i) {
+                return i.td > t0s;
+            });
+        };
+        // 挑选最好的方案：延迟小的优先，位置不重要
+        var score = function (i, is_top) {
+            if (i.r > maxr) return - Infinity;
+            var f = function (p) {
+                return is_top ? p : (hc - p);
+            };
+            return 1 - (i.r / maxr * (31 / 32) + f(i.p) / hc * (1 / 32));
+        };
+        return function (t0s, hv, is_top, b) {
+            syn(t0s);
+            var al = (is_top ? top : bottom) (hv, t0s, b);
+            if (!al.length) return null;
+            var scored = al.map(function (i) {
+                return [score(i, is_top),
+                    i];
+            });
+            var best = scored.reduce(function (x, y) {
+                return x[0] > y[0] ? x : y;
+            }) [1];
+            use(best.p, best.m, best.r + t0s + u)
+            return {
+                'top': best.p,
+                'time': best.r + t0s
+            };
+        };
+    };
+}(config.playResY, config.bottom, config.fixtime, config.max_delay));
+// 为每条弹幕安置位置
+var setPosition = function (danmaku) {
+    var normal = normalDanmaku(),
+        side = sideDanmaku();
+    return danmaku.sort(function (x, y) {
+        return x.time - y.time;
+    }).map(function (line) {
+        var font_size = Math.round(line.size * config.font_size);
+        var width = calcWidth(line.text, font_size);
+        switch (line.mode) {
+            case 'R2L':
+                return (function () {
+                    var pos = normal(line.time, width, font_size, line.bottom);
+                    if (!pos) return null;
+                    line.type = 'R2L';
+                    line.stime = pos.time;
+                    line.poss = {
+                        'x': config.playResX + width / 2,
+                        'y': pos.top + font_size,
+                    };
+                    line.posd = {
+                        'x': - width / 2,
+                        'y': pos.top + font_size,
+                    };
+                    line.dtime = config.r2ltime + line.stime;
+                    return line;
+                }());
+            case 'TOP':
+            case 'BOTTOM':
+                return (function (isTop) {
+                    var pos = side(line.time, font_size, isTop, line.bottom);
+                    if (!pos) return null;
+                    line.type = 'Fix';
+                    line.stime = pos.time;
+                    line.posd = line.poss = {
+                        'x': Math.round(config.playResX / 2),
+                        'y': pos.top + font_size,
+                    };
+                    line.dtime = config.fixtime + line.stime;
+                    return line;
+                }(line.mode === 'TOP'));
+            default:
+                return null;
+        };
+    }).filter(function (l) {
+        return l;
+    }).sort(function (x, y) {
+        return x.stime - y.stime;
+    });
+};
+
+
+/*
+ * bilibili
+ */
+// 获取xml
+var fetchXML = function (cid, callback) {
+    if(cid.includes("ani.gamer.com.tw")){
+        cid = cid.match(/https:\/\/ani\.gamer\.com\.tw\/animeVideo\.php\?sn=(\d*)/)[1];
+        var DanmakuLink="https://ani.gamer.com.tw/ajax/danmuGet.php";
+        var danmaku=new ObjectRequest(DanmakuLink);
+        danmaku.method="POST";
+        danmaku.data="sn="+cid;
+        request(danmaku,function (responseDetails) {
+            var responseText = responseDetails.responseText;
+            var comments = responseText;
+            debug("Comments: " + comments);
+            var json=JSON.parse(comments);
+            debug("Comments: " + comments);
+            var parser = new DOMParser();
+            var xmlDoc   = parser.parseFromString('<?xml version="1.0" encoding="utf-8"?><i></i>', "application/xml");
+            var root=xmlDoc.getElementsByTagName("i");
+            for(var obj of Object.values( json)){
+                try{
+                    var d=xmlDoc.createElement("d");
+                    d.innerHTML=obj.text.replace(/[^\u4e00-\u9fa5`~\!@#\$%\^\*\(\)_\+\|\-=\\\{\}\[\]:";'\?,\.\/\w\d<>&\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF\u2605-\u2606\u2190-\u2195\u203B]/g,"").replace("<","&lt;").replace(">","&gt;").replace("&","&amp;");
+                    var type;
+                    if(obj.position==0){
+                        type=1;
+                    }
+                    else if(obj.position==2){
+                        type=4;
+                    }
+                    else if(obj.position==1){
+                        type=5;
+                    }
+                    else{
+                        type=6;
+                    }
+                    var p=obj.time/10+","+type+",25,"+parseInt(obj.color.match(/#([\d\w]{6})/)[1],16)+",1550236858,0,55f99b31,12108265626271746";
+                    d.setAttribute("p",p);
+                    root[0].appendChild(d);
+                }
+                catch(e){
+                    debug(e+" "+obj.text);
+                    continue;
+                }
+            }
+            comments= (new XMLSerializer()).serializeToString(xmlDoc );
+            debug("Comments: " + comments);
+            callback(comments);
+        });
+    }
+    else if(cid.includes("api.bilibili.com")||cid.includes("www.tucao.one")){
+        GM_xmlhttpRequest({
+            'method': 'GET',
+            'url': cid,
+            'onload': function (resp) {
+                var content = resp.responseText.replace(/(?:[\0-\x08\x0B\f\x0E-\x1F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])/g, '');
+                callback(content);
+            }
+        });
+    }
+    else if(cid.includes("danmu.aixifan.com")) {
+        var danmaku=new ObjectRequest(cid);
+        request(danmaku, function (responseDetails) {
+            var responseText = responseDetails.responseText;
+            comments = responseText;
+            var json = JSON.parse(comments);
+            comments=AcfunParse(json);
+            callback(comments);
+        });
+        //reset for player
+        AcfunDanmaku = [];
+        AcfunCount = 1;
+    }
+};
+
+var fetchDanmaku = function (cid, callback) {
+    fetchXML(cid, function (content) {
+        callback(parseXML(content));
+    });
+};
+var parseXML = function (content) {
+    var data = (new DOMParser()).parseFromString(content, 'text/xml');
+    return Array.apply(Array, data.querySelectorAll('d')).map(function (line) {
+        var info = line.getAttribute('p').split(','),
+            text = line.textContent;
+        return {
+            'text': text,
+            'time': Number(info[0]),
+            'mode': [
+                undefined,
+                'R2L',
+                'R2L',
+                'R2L',
+                'BOTTOM',
+                'TOP'
+            ][Number(info[1])],
+            'size': Number(info[2]),
+            'color': RRGGBB(parseInt(info[3], 10) & 16777215),
+            'bottom': Number(info[5]) > 0,
+            // 'create': new Date(Number(info[4])),
+            // 'pool': Number(info[5]),
+            // 'sender': String(info[6]),
+            // 'dmid': Number(info[7]),
+        };
+    });
+};
+// 获取当前cid
+var getCid = function (callback) {
+    debug('get cid...');
+    var cid = null;
+    try {
+        cid = input.value.match(/.* - (https?:\/\/.*)/)[1];
+    } catch (e) {
+        var DanmakuLink=input.value.match(matching);
+        if (DanmakuLink != null) {
+
+            //bahamut
+            if (DanmakuLink[2] != null) {
+                cid = DanmakuLink[2];
+            }
+            //bilibili
+            else if (DanmakuLink[1] != null) {
+                cid = DanmakuLink[1];
+            }
+            //acfun
+            else if(DanmakuLink[3]!=null){
+                cid=DanmakuLink[3];
+            }
+        }
+    }
+    if (cid) {
+        setTimeout(callback, 0, cid || undefined);
+    } else {
+        setTimeout(getCid, 100, callback);
+    }
+};
+// 下载的主程序
+var mina = function (cid0) {
+    getCid(function (cid) {
+        cid = cid || cid0;
+        fetchDanmaku(cid, function (danmaku) {
+            var name = null;
+            try {
+                name=input.value.match(/Search Result: (.*) - https?:\/\/.*/)[1];
+            }
+            catch (e) {
+                name=document.title;
+            }
+            debug('got xml with %d danmaku', danmaku.length);
+            var ass = generateASS(setPosition(danmaku), {
+                'title': document.title,
+                'ori': location.href,
+            });
+            startDownload('﻿' + ass, name + '.ass');
+        });
+    });
+};
+// 初始化按钮
+var initButton = (function () {
+    var done = false;
+    return function () {
+        debug('init button');
+        if (!document.querySelector('body')) return;
+        getCid(function (cid) {
+            debug('cid = %o', cid);
+            if (!cid || done) return;
+            else done = true;
+            fetchDanmaku(cid, function (danmaku) {
+                CreateButton("Download Danmaku",function () {
+                    mina(cid);
+
+                });
+            });
+        });
+    };
+}());
+/*
+ * Common
+ */
+// 初始化
+var DanmakuDownloaderInit = function () {
+    IsDownload=true;
+    initFont();
+    initButton();
+};
 var BinArray=function(){var t={};return t.bsearch=function(t,e,r){if(!Array.isArray(t))throw new Error("Bsearch can only be run on arrays");if(0===t.length)return 0;if(r(e,t[0])<0)return 0;if(r(e,t[t.length-1])>=0)return t.length;for(var i=0,n=0,o=0,s=t.length-1;i<=s;){if(n=Math.floor((s+i+1)/2),o++,r(e,t[n-1])>=0&&r(e,t[n])<0)return n;if(r(e,t[n-1])<0)s=n-1;else{if(!(r(e,t[n])>=0))throw new Error("Program Error. Inconsistent comparator or unsorted array!");i=n}if(o>1500)throw new Error("Iteration depth exceeded. Inconsistent comparator or astronomical dataset!")}return-1},t.binsert=function(e,r,i){var n=t.bsearch(e,r,i);return e.splice(n,0,r),n},t}(),CommentUtils;!function(t){var e=function(){function t(t){if(this._internalArray=null,!Array.isArray(t))throw new Error("Not an array. Cannot construct matrix.");if(16!=t.length)throw new Error("Illegal Dimensions. Matrix3D should be 4x4 matrix.");this._internalArray=t}return Object.defineProperty(t.prototype,"flatArray",{get:function(){return this._internalArray.slice(0)},set:function(t){throw new Error("Not permitted. Matrices are immutable.")},enumerable:!0,configurable:!0}),t.prototype.isIdentity=function(){return this.equals(t.identity())},t.prototype.dot=function(e){for(var r=this._internalArray.slice(0),i=e._internalArray.slice(0),n=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],o=0;o<4;o++)for(var s=0;s<4;s++)for(var a=0;a<4;a++)n[4*o+s]+=r[4*o+a]*i[4*a+s];return new t(n)},t.prototype.equals=function(t){for(var e=0;e<16;e++)if(this._internalArray[e]!==t._internalArray[e])return!1;return!0},t.prototype.toCss=function(){for(var t=this._internalArray.slice(0),e=0;e<t.length;e++)Math.abs(t[e])<1e-6&&(t[e]=0);return"matrix3d("+t.join(",")+")"},t.identity=function(){return new t([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1])},t.createScaleMatrix=function(e,r,i){return new t([e,0,0,0,0,r,0,0,0,0,i,0,0,0,0,1])},t.createRotationMatrix=function(e,r,i){var n=Math.PI/180,o=r*n,s=i*n,a=Math.cos,h=Math.sin;return new t([a(o)*a(s),a(o)*h(s),h(o),0,-h(s),a(s),0,0,-h(o)*a(s),-h(o)*h(s),a(o),0,0,0,0,1].map(function(t){return 1e-10*Math.round(1e10*t)}))},t}();t.Matrix3D=e}(CommentUtils||(CommentUtils={}));var __extends=this&&this.__extends||function(t,e){function r(){this.constructor=t}for(var i in e)e.hasOwnProperty(i)&&(t[i]=e[i]);t.prototype=null===e?Object.create(e):(r.prototype=e.prototype,new r)},CoreComment=function(){function t(e,r){if(void 0===r&&(r={}),this.mode=1,this.stime=0,this.text="",this.ttl=4e3,this.dur=4e3,this.cindex=-1,this.motion=[],this.movable=!0,this._alphaMotion=null,this.absolute=!0,this.align=0,this.axis=0,this._alpha=1,this._size=25,this._color=16777215,this._border=!1,this._shadow=!0,this._font="",this._transform=null,!e)throw new Error("Comment not bound to comment manager.");if(this.parent=e,r.hasOwnProperty("stime")&&(this.stime=r.stime),r.hasOwnProperty("mode")?this.mode=r.mode:this.mode=1,r.hasOwnProperty("dur")&&(this.dur=r.dur,this.ttl=this.dur),this.dur*=this.parent.options.global.scale,this.ttl*=this.parent.options.global.scale,r.hasOwnProperty("text")&&(this.text=r.text),r.hasOwnProperty("motion")){this._motionStart=[],this._motionEnd=[],this.motion=r.motion;for(var i=0,n=0;n<r.motion.length;n++){this._motionStart.push(i);var o=0;for(var s in r.motion[n]){var a=r.motion[n][s];o=Math.max(a.dur,o),null!==a.easing&&void 0!==a.easing||(r.motion[n][s].easing=t.LINEAR)}i+=o,this._motionEnd.push(i)}this._curMotion=0}r.hasOwnProperty("color")&&(this._color=r.color),r.hasOwnProperty("size")&&(this._size=r.size),r.hasOwnProperty("border")&&(this._border=r.border),r.hasOwnProperty("opacity")&&(this._alpha=r.opacity),r.hasOwnProperty("alpha")&&(this._alphaMotion=r.alpha),r.hasOwnProperty("font")&&(this._font=r.font),r.hasOwnProperty("x")&&(this._x=r.x),r.hasOwnProperty("y")&&(this._y=r.y),r.hasOwnProperty("shadow")&&(this._shadow=r.shadow),r.hasOwnProperty("align")&&(this.align=r.align),r.hasOwnProperty("axis")&&(this.axis=r.axis),r.hasOwnProperty("transform")&&(this._transform=new CommentUtils.Matrix3D(r.transform)),r.hasOwnProperty("position")&&"relative"===r.position&&(this.absolute=!1,this.mode<7&&console.warn("Using relative position for CSA comment."))}return t.prototype.init=function(t){void 0===t&&(t=null),this.dom=null!==t?t.dom:document.createElement("div"),this.dom.className=this.parent.options.global.className,this.dom.appendChild(document.createTextNode(this.text)),this.dom.textContent=this.text,this.dom.innerText=this.text,this.size=this._size,16777215!=this._color&&(this.color=this._color),this.shadow=this._shadow,this._border&&(this.border=this._border),""!==this._font&&(this.font=this._font),void 0!==this._x&&(this.x=this._x),void 0!==this._y&&(this.y=this._y),(1!==this._alpha||this.parent.options.global.opacity<1)&&(this.alpha=this._alpha),null===this._transform||this._transform.isIdentity()||(this.transform=this._transform.flatArray),this.motion.length>0&&this.animate()},Object.defineProperty(t.prototype,"x",{get:function(){return null!==this._x&&void 0!==this._x||(this.axis%2==0?this.align%2==0?this._x=this.dom.offsetLeft:this._x=this.dom.offsetLeft+this.width:this.align%2==0?this._x=this.parent.width-this.dom.offsetLeft:this._x=this.parent.width-this.dom.offsetLeft-this.width),this.absolute?this._x:this._x/this.parent.width},set:function(t){this._x=t,this.absolute||(this._x*=this.parent.width),this.axis%2==0?this.dom.style.left=this._x+(this.align%2==0?0:-this.width)+"px":this.dom.style.right=this._x+(this.align%2==0?-this.width:0)+"px"},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"y",{get:function(){return null!==this._y&&void 0!==this._y||(this.axis<2?this.align<2?this._y=this.dom.offsetTop:this._y=this.dom.offsetTop+this.height:this.align<2?this._y=this.parent.height-this.dom.offsetTop:this._y=this.parent.height-this.dom.offsetTop-this.height),this.absolute?this._y:this._y/this.parent.height},set:function(t){this._y=t,this.absolute||(this._y*=this.parent.height),this.axis<2?this.dom.style.top=this._y+(this.align<2?0:-this.height)+"px":this.dom.style.bottom=this._y+(this.align<2?-this.height:0)+"px"},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"bottom",{get:function(){var t=Math.floor(this.axis/2)===Math.floor(this.align/2);return this.y+(t?this.height:0)},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"right",{get:function(){var t=this.axis%2==this.align%2;return this.x+(t?this.width:0)},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"width",{get:function(){return null!==this._width&&void 0!==this._width||(this._width=this.dom.offsetWidth),this._width},set:function(t){this._width=t,this.dom.style.width=this._width+"px"},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"height",{get:function(){return null!==this._height&&void 0!==this._height||(this._height=this.dom.offsetHeight),this._height},set:function(t){this._height=t,this.dom.style.height=this._height+"px"},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"size",{get:function(){return this._size},set:function(t){this._size=t,this.dom.style.fontSize=this._size+"px"},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"color",{get:function(){return this._color},set:function(t){this._color=t;var e=t.toString(16);e=e.length>=6?e:new Array(6-e.length+1).join("0")+e,this.dom.style.color="#"+e,0===this._color&&(this.dom.className=this.parent.options.global.className+" rshadow")},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"alpha",{get:function(){return this._alpha},set:function(t){this._alpha=t,this.dom.style.opacity=Math.min(this._alpha,this.parent.options.global.opacity)+""},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"border",{get:function(){return this._border},set:function(t){this._border=t,this._border?this.dom.style.border="1px solid #00ffff":this.dom.style.border="none"},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"shadow",{get:function(){return this._shadow},set:function(t){this._shadow=t,this._shadow||(this.dom.className=this.parent.options.global.className+" noshadow")},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"font",{get:function(){return this._font},set:function(t){this._font=t,this._font.length>0?this.dom.style.fontFamily=this._font:this.dom.style.fontFamily=""},enumerable:!0,configurable:!0}),Object.defineProperty(t.prototype,"transform",{get:function(){return this._transform.flatArray},set:function(t){this._transform=new CommentUtils.Matrix3D(t),null!==this.dom&&(this.dom.style.transform=this._transform.toCss())},enumerable:!0,configurable:!0}),t.prototype.time=function(t){this.ttl-=t,this.ttl<0&&(this.ttl=0),this.movable&&this.update(),this.ttl<=0&&this.finish()},t.prototype.update=function(){this.animate()},t.prototype.invalidate=function(){this._x=null,this._y=null,this._width=null,this._height=null},t.prototype._execMotion=function(t,e){for(var r in t)if(t.hasOwnProperty(r)){var i=t[r];this[r]=i.easing(Math.min(Math.max(e-i.delay,0),i.dur),i.from,i.to-i.from,i.dur)}},t.prototype.animate=function(){if(this._alphaMotion&&(this.alpha=(this.dur-this.ttl)*(this._alphaMotion.to-this._alphaMotion.from)/this.dur+this._alphaMotion.from),0!==this.motion.length){var t=Math.max(this.ttl,0),e=this.dur-t-this._motionStart[this._curMotion];return this._execMotion(this.motion[this._curMotion],e),this.dur-t>this._motionEnd[this._curMotion]?void(++this._curMotion>=this.motion.length&&(this._curMotion=this.motion.length-1)):void 0}},t.prototype.stop=function(){},t.prototype.finish=function(){this.parent.finish(this)},t.prototype.toString=function(){return["[",this.stime,"|",this.ttl,"/",this.dur,"]","(",this.mode,")",this.text].join("")},t.LINEAR=function(t,e,r,i){return t*r/i+e},t}(),ScrollComment=function(t){function e(e,r){t.call(this,e,r),this.dur*=this.parent.options.scroll.scale,this.ttl*=this.parent.options.scroll.scale}return __extends(e,t),Object.defineProperty(e.prototype,"alpha",{set:function(t){this._alpha=t,this.dom.style.opacity=Math.min(Math.min(this._alpha,this.parent.options.global.opacity),this.parent.options.scroll.opacity)+""},enumerable:!0,configurable:!0}),e.prototype.init=function(e){void 0===e&&(e=null),t.prototype.init.call(this,e),this.x=this.parent.width,this.parent.options.scroll.opacity<1&&(this.alpha=this._alpha),this.absolute=!0},e.prototype.update=function(){this.x=this.ttl/this.dur*(this.parent.width+this.width)-this.width},e}(CoreComment),__extends=this&&this.__extends||function(t,e){function r(){this.constructor=t}for(var i in e)e.hasOwnProperty(i)&&(t[i]=e[i]);t.prototype=null===e?Object.create(e):(r.prototype=e.prototype,new r)},CssCompatLayer=function(){function t(){}return t.transform=function(t,e){t.style.transform=e,t.style.webkitTransform=e,t.style.msTransform=e,t.style.oTransform=e},t}(),CssScrollComment=function(t){function e(){t.apply(this,arguments),this._dirtyCSS=!0}return __extends(e,t),Object.defineProperty(e.prototype,"x",{get:function(){return this.ttl/this.dur*(this.parent.width+this.width)-this.width},set:function(t){if(null!==this._x&&"number"==typeof this._x){var e=t-this._x;this._x=t,CssCompatLayer.transform(this.dom,"translateX("+(this.axis%2==0?e:-e)+"px)")}else this._x=t,this.absolute||(this._x*=this.parent.width),this.axis%2==0?this.dom.style.left=this._x+(this.align%2==0?0:-this.width)+"px":this.dom.style.right=this._x+(this.align%2==0?-this.width:0)+"px"},enumerable:!0,configurable:!0}),e.prototype.update=function(){this._dirtyCSS&&(this.dom.style.transition="transform "+this.ttl+"ms linear",this.x=-this.width,this._dirtyCSS=!1)},e.prototype.invalidate=function(){t.prototype.invalidate.call(this),this._dirtyCSS=!0},e.prototype.stop=function(){t.prototype.stop.call(this),this.dom.style.transition="",this.x=this._x,this._x=null,this.x=this.x,this._dirtyCSS=!0},e}(ScrollComment),CommentFactory=function(){function t(){this._bindings={}}return t._simpleCssScrollingInitializer=function(t,e){var r=new CssScrollComment(t,e);switch(r.mode){case 1:r.align=0,r.axis=0;break;case 2:r.align=2,r.axis=2;break;case 6:r.align=1,r.axis=1}return r.init(),t.stage.appendChild(r.dom),r},t._simpleScrollingInitializer=function(t,e){var r=new ScrollComment(t,e);switch(r.mode){case 1:r.align=0,r.axis=0;break;case 2:r.align=2,r.axis=2;break;case 6:r.align=1,r.axis=1}return r.init(),t.stage.appendChild(r.dom),r},t._simpleAnchoredInitializer=function(t,e){var r=new CoreComment(t,e);switch(r.mode){case 4:r.align=2,r.axis=2;break;case 5:r.align=0,r.axis=0}return r.init(),t.stage.appendChild(r.dom),r},t._advancedCoreInitializer=function(t,e){var r=new CoreComment(t,e);return r.init(),r.transform=CommentUtils.Matrix3D.createRotationMatrix(0,e.rY,e.rZ).flatArray,t.stage.appendChild(r.dom),r},t.defaultFactory=function(){var e=new t;return e.bind(1,t._simpleScrollingInitializer),e.bind(2,t._simpleScrollingInitializer),e.bind(6,t._simpleScrollingInitializer),e.bind(4,t._simpleAnchoredInitializer),e.bind(5,t._simpleAnchoredInitializer),e.bind(7,t._advancedCoreInitializer),e.bind(17,t._advancedCoreInitializer),e},t.defaultCssRenderFactory=function(){var e=new t;return e.bind(1,t._simpleCssScrollingInitializer),e.bind(2,t._simpleCssScrollingInitializer),e.bind(6,t._simpleCssScrollingInitializer),e.bind(4,t._simpleAnchoredInitializer),e.bind(5,t._simpleAnchoredInitializer),e.bind(7,t._advancedCoreInitializer),e.bind(17,t._advancedCoreInitializer),e},t.defaultCanvasRenderFactory=function(){throw new Error("Not implemented")},t.defaultSvgRenderFactory=function(){throw new Error("Not implemented")},t.prototype.bind=function(t,e){this._bindings[t]=e},t.prototype.canCreate=function(t){return this._bindings.hasOwnProperty(t.mode)},t.prototype.create=function(t,e){if(null===e||!e.hasOwnProperty("mode"))throw new Error("Comment format incorrect");if(!this._bindings.hasOwnProperty(e.mode))throw new Error("No binding for comment type "+e.mode);return this._bindings[e.mode](t,e)},t}(),__extends=this&&this.__extends||function(t,e){function r(){this.constructor=t}for(var i in e)e.hasOwnProperty(i)&&(t[i]=e[i]);t.prototype=null===e?Object.create(e):(r.prototype=e.prototype,new r)},CommentSpaceAllocator=function(){function t(t,e){void 0===t&&(t=0),void 0===e&&(e=0),this._pools=[[]],this.avoid=1,this._width=t,this._height=e}return t.prototype.willCollide=function(t,e){return t.stime+t.ttl>=e.stime+e.ttl/2},t.prototype.pathCheck=function(t,e,r){for(var i=t+e.height,n=e.right,o=0;o<r.length;o++)if(!(r[o].y>i||r[o].bottom<t)){if(!(r[o].right<e.x||r[o].x>n))return!1;if(this.willCollide(r[o],e))return!1}return!0},t.prototype.assign=function(t,e){for(;this._pools.length<=e;)this._pools.push([]);var r=this._pools[e];if(0===r.length)return t.cindex=e,0;if(this.pathCheck(0,t,r))return t.cindex=e,0;for(var i=0,n=0;n<r.length&&!((i=r[n].bottom+this.avoid)+t.height>this._height);n++)if(this.pathCheck(i,t,r))return t.cindex=e,i;return this.assign(t,e+1)},t.prototype.add=function(t){t.height>this._height?(t.cindex=-2,t.y=0):(t.y=this.assign(t,0),BinArray.binsert(this._pools[t.cindex],t,function(t,e){return t.bottom<e.bottom?-1:t.bottom>e.bottom?1:0}))},t.prototype.remove=function(t){if(!(t.cindex<0)){if(t.cindex>=this._pools.length)throw new Error("cindex out of bounds");var e=this._pools[t.cindex].indexOf(t);e<0||this._pools[t.cindex].splice(e,1)}},t.prototype.setBounds=function(t,e){this._width=t,this._height=e},t}(),AnchorCommentSpaceAllocator=function(t){function e(){t.apply(this,arguments)}return __extends(e,t),e.prototype.add=function(e){t.prototype.add.call(this,e),e.x=(this._width-e.width)/2},e.prototype.willCollide=function(t,e){return!0},e.prototype.pathCheck=function(t,e,r){for(var i=t+e.height,n=0;n<r.length;n++)if(!(r[n].y>i||r[n].bottom<t))return!1;return!0},e}(CommentSpaceAllocator),CommentManager=function(){function t(t){var e=0;this._listeners={},this._lastPosition=0,this.stage=t,this.options={global:{opacity:1,scale:1,className:"cmt"},scroll:{opacity:1,scale:1},limit:0},this.timeline=[],this.runline=[],this.position=0,this.limiter=0,this.factory=null,this.filter=null,this.csa={scroll:new CommentSpaceAllocator(0,0),top:new AnchorCommentSpaceAllocator(0,0),bottom:new AnchorCommentSpaceAllocator(0,0),reverse:new CommentSpaceAllocator(0,0),scrollbtm:new CommentSpaceAllocator(0,0)},this.width=this.stage.offsetWidth,this.height=this.stage.offsetHeight,this._startTimer=function(){if(!(e>0)){var t=(new Date).getTime(),r=this;e=window.setInterval(function(){var e=(new Date).getTime()-t;t=(new Date).getTime(),r.onTimerEvent(e,r)},10)}},this._stopTimer=function(){window.clearInterval(e),e=0}}var e=function(t,e){return t.stime>e.stime?2:t.stime<e.stime?-2:t.date>e.date?1:t.date<e.date?-1:null!=t.dbid&&null!=e.dbid?t.dbid>e.dbid?1:t.dbid<e.dbid?-1:0:0};return t.prototype.stop=function(){this._stopTimer(),this.runline.forEach(function(t){t.stop()})},t.prototype.start=function(){this._startTimer()},t.prototype.seek=function(t){this.position=BinArray.bsearch(this.timeline,t,function(t,e){return t<e.stime?-1:t>e.stime?1:0})},t.prototype.validate=function(t){return null!=t&&this.filter.doValidate(t)},t.prototype.load=function(t){this.timeline=t,this.timeline.sort(e),this.dispatchEvent("load")},t.prototype.insert=function(t){BinArray.binsert(this.timeline,t,e)<=this.position&&this.position++,this.dispatchEvent("insert")},t.prototype.clear=function(){for(;this.runline.length>0;)this.runline[0].finish();this.dispatchEvent("clear")},t.prototype.setBounds=function(){this.width=this.stage.offsetWidth,this.height=this.stage.offsetHeight,this.dispatchEvent("resize");for(var t in this.csa)this.csa[t].setBounds(this.width,this.height);this.stage.style.perspective=this.width/Math.tan(55*Math.PI/180)/2+"px",this.stage.style.webkitPerspective=this.width/Math.tan(55*Math.PI/180)/2+"px"},t.prototype.init=function(t){if(this.setBounds(),null==this.filter&&(this.filter=new CommentFilter),null==this.factory)switch(t){case"legacy":this.factory=CommentFactory.defaultFactory();break;default:case"css":this.factory=CommentFactory.defaultCssRenderFactory()}},t.prototype.time=function(t){if(t-=1,this.position>=this.timeline.length||Math.abs(this._lastPosition-t)>=2e3){if(this.seek(t),this._lastPosition=t,this.timeline.length<=this.position)return}else this._lastPosition=t;for(;this.position<this.timeline.length&&this.timeline[this.position].stime<=t;this.position++)this.options.limit>0&&this.runline.length>this.limiter||this.validate(this.timeline[this.position])&&this.send(this.timeline[this.position])},t.prototype.rescale=function(){},t.prototype.send=function(t){if(8===t.mode)return console.log(t),void(this.scripting&&console.log(this.scripting.eval(t.code)));if(null==this.filter||null!=(t=this.filter.doModify(t))){var e=this.factory.create(this,t);switch(e.mode){default:case 1:this.csa.scroll.add(e);break;case 2:this.csa.scrollbtm.add(e);break;case 4:this.csa.bottom.add(e);break;case 5:this.csa.top.add(e);break;case 6:this.csa.reverse.add(e);break;case 7:case 17:}e.y=e.y,this.dispatchEvent("enterComment",e),this.runline.push(e)}},t.prototype.finish=function(t){this.dispatchEvent("exitComment",t),this.stage.removeChild(t.dom);var e=this.runline.indexOf(t);switch(e>=0&&this.runline.splice(e,1),t.mode){default:case 1:this.csa.scroll.remove(t);break;case 2:this.csa.scrollbtm.remove(t);break;case 4:this.csa.bottom.remove(t);break;case 5:this.csa.top.remove(t);break;case 6:this.csa.reverse.remove(t);break;case 7:}},t.prototype.addEventListener=function(t,e){void 0!==this._listeners[t]?this._listeners[t].push(e):this._listeners[t]=[e]},t.prototype.dispatchEvent=function(t,e){if(void 0!==this._listeners[t])for(var r=0;r<this._listeners[t].length;r++)try{this._listeners[t][r](e)}catch(t){console.err(t.stack)}},t.prototype.onTimerEvent=function(t,e){for(var r=0;r<e.runline.length;r++)e.runline[r].time(t)},t}(),CommentFilter=function(){function t(e,r){for(var i=e.subject.split("."),n=r;i.length>0;){var o=i.shift();if(""!==o&&(n.hasOwnProperty(o)&&(n=n[o]),null===n||void 0===n)){n=null;break}}if(null===n)return!0;switch(e.op){case"<":return n<e.value;case">":return n>e.value;case"~":case"regexp":return new RegExp(e.value).test(n.toString());case"=":case"eq":return e.value===("number"==typeof n?n:n.toString());case"NOT":return!t(e.value,n);case"AND":return!!Array.isArray(e.value)&&e.value.every(function(e){return t(e,n)});case"OR":return!!Array.isArray(e.value)&&e.value.some(function(e){return t(e,n)});default:return!1}}function e(){this.rules=[],this.modifiers=[],this.allowUnknownTypes=!0,this.allowTypes={1:!0,2:!0,4:!0,5:!0,6:!0,7:!0,8:!0,17:!0}}return e.prototype.doModify=function(t){return this.modifiers.reduce(function(t,e){return e(t)},t)},e.prototype.beforeSend=function(t){return t},e.prototype.doValidate=function(e){return!((!this.allowUnknownTypes||e.mode.toString()in this.allowTypes)&&!this.allowTypes[e.mode.toString()])&&this.rules.every(function(r){try{i=t(r,e)}catch(t){var i=!1}return"accept"===r.mode?i:!i})},e.prototype.addRule=function(t){if("accept"!==t.mode&&"reject"!==t.mode)throw new Error("Rule must be of accept type or reject type.");this.rules.push(t)},e.prototype.addModifier=function(t){if("function"!=typeof t)throw new Error("Modifiers need to be functions.");this.modifiers.push(t)},e}(),CommentProvider=function(){function t(){this._started=!1,this._destroyed=!1,this._staticSources={},this._dynamicSources={},this._parsers={},this._targets=[]}return t.SOURCE_JSON="JSON",t.SOURCE_XML="XML",t.SOURCE_TEXT="TEXT",t.BaseHttpProvider=function(t,e,r,i,n){return new Promise(function(o,s){var a=new XMLHttpRequest,h=e;if(i&&("POST"===t||"PUT"===t)){h+="?";var l=[];for(var p in i)i.hasOwnProperty(p)&&l.push(encodeURIComponent(p)+"="+encodeURIComponent(i[p]));h+=l.join("&")}a.onload=function(){this.status>=200&&this.status<300?o(this.response):s(new Error(this.status+" "+this.statusText))},a.onerror=function(){s(new Error(this.status+" "+this.statusText))},a.open(t,h),a.responseType="string"==typeof r?r:"",void 0!==n?a.send(n):a.send()})},t.JSONProvider=function(e,r,i,n){return t.BaseHttpProvider(e,r,"json",i,n).then(function(t){return t})},t.XMLProvider=function(e,r,i,n){return t.BaseHttpProvider(e,r,"document",i,n).then(function(t){return t})},t.TextProvider=function(e,r,i,n){return t.BaseHttpProvider(e,r,"text",i,n).then(function(t){return t})},t.prototype.addStaticSource=function(t,e){if(this._destroyed)throw new Error("Comment provider has been destroyed, cannot attach more sources.");return e in this._staticSources||(this._staticSources[e]=[]),this._staticSources[e].push(t),this},t.prototype.addDynamicSource=function(t,e){if(this._destroyed)throw new Error("Comment provider has been destroyed, cannot attach more sources.");return e in this._dynamicSources||(this._dynamicSources[e]=[]),this._dynamicSources[e].push(t),this},t.prototype.addTarget=function(t){if(this._destroyed)throw new Error("Comment provider has been destroyed, cannot attach more targets.");if(!(t instanceof CommentManager))throw new Error("Expected the target to be an instance of CommentManager.");return this._targets.push(t),this},t.prototype.addParser=function(t,e){if(this._destroyed)throw new Error("Comment provider has been destroyed, cannot attach more parsers.");return e in this._parsers||(this._parsers[e]=[]),this._parsers[e].unshift(t),this},t.prototype.applyParsersOne=function(t,e){return new Promise(function(r,i){if(e in this._parsers){for(var n=0;n<this._parsers[e].length;n++){var o=null;try{o=this._parsers[e][n].parseOne(t)}catch(t){console.error(t)}if(null!==o)return void r(o)}i(new Error("Ran out of parsers for they target type"))}else i(new Error('No parsers defined for "'+e+'"'))}.bind(this))},t.prototype.applyParsersList=function(t,e){return new Promise(function(r,i){if(e in this._parsers){for(var n=0;n<this._parsers[e].length;n++){var o=null;try{o=this._parsers[e][n].parseMany(t)}catch(t){console.error(t)}if(null!==o)return void r(o)}i(new Error("Ran out of parsers for the target type"))}else i(new Error('No parsers defined for "'+e+'"'))}.bind(this))},t.prototype.load=function(){if(this._destroyed)throw new Error("Cannot load sources on a destroyed provider.");var t=[];for(var e in this._staticSources)t.push(Promises.any(this._staticSources[e]).then(function(t){return this.applyParsersList(t,e)}.bind(this)));return 0===t.length?Promise.resolve([]):Promises.any(t).then(function(t){for(var e=0;e<this._targets.length;e++)this._targets[e].load(t);return Promise.resolve(t)}.bind(this))},t.prototype.start=function(){if(this._destroyed)throw new Error("Cannot start a provider that has been destroyed.");return this._started=!0,this.load().then(function(t){for(var e in this._dynamicSources)this._dynamicSources[e].forEach(function(t){t.addEventListener("receive",function(t){for(var r=0;r<this._targets.length;r++)this._targets[r].send(this.applyParserOne(t,e))}.bind(this))}.bind(this));return Promise.resolve(t)}.bind(this))},t.prototype.send=function(t,e){throw new Error("Not implemented")},t.prototype.destroy=function(){return this._destroyed?Promise.resolve():(this._destroyed=!0,Promise.resolve())},t}(),Promises=function(){var t={};return t.any=function(t){return Array.isArray(t)?0===t.length?Promise.reject():new Promise(function(e,r){for(var i=!1,n=0,o=[],s=0;s<t.length;s++)t[s].then(function(t){n++,i||(i=!0,e(t))}).catch(function(e){return function(s){n++,o[e]=s,n===t.length&&(i||r(o))}}(s))}):Promise.resolve(t)},t}(),BilibiliFormat=function(){var t={},e=function(t){return t.replace(/\t/,"\\t")},r=function(t){if("["!==t.charAt(0))return t;switch(t.charAt(t.length-1)){case"]":return t;case'"':return t+"]";case",":return t.substring(0,t.length-1)+'"]';default:return r(t.substring(0,t.length-1))}},i=function(t){return t=t.replace(new RegExp("</([^d])","g"),"</disabled $1"),t=t.replace(new RegExp("</(S{2,})","g"),"</disabled $1"),t=t.replace(new RegExp("<([^d/]W*?)","g"),"<disabled $1"),t=t.replace(new RegExp("<([^/ ]{2,}W*?)","g"),"<disabled $1")};return t.XMLParser=function(t){this._attemptFix=!0,this._logBadComments=!0,"object"==typeof t&&(this._attemptFix=!1!==t.attemptFix,this._logBadComments=!1!==t.logBadComments)},t.XMLParser.prototype.parseOne=function(t){try{var i=t.getAttribute("p").split(",")}catch(t){return null}var n=t.textContent,o={};if(o.stime=Math.round(1e3*parseFloat(i[0])),o.size=parseInt(i[2]),o.color=parseInt(i[3]),o.mode=parseInt(i[1]),o.date=parseInt(i[4]),o.pool=parseInt(i[5]),o.position="absolute",null!=i[7]&&(o.dbid=parseInt(i[7])),o.hash=i[6],o.border=!1,o.mode<7)o.text=n.replace(/(\/n|\\n|\n|\r\n)/g,"\n");else if(7===o.mode)try{this._attemptFix&&(n=e(r(n)));var s=JSON.parse(n);if(o.shadow=!0,o.x=parseFloat(s[0]),o.y=parseFloat(s[1]),(Math.floor(o.x)<o.x||Math.floor(o.y)<o.y)&&(o.position="relative"),o.text=s[4].replace(/(\/n|\\n|\n|\r\n)/g,"\n"),o.rZ=0,o.rY=0,s.length>=7&&(o.rZ=parseInt(s[5],10),o.rY=parseInt(s[6],10)),o.motion=[],o.movable=!1,s.length>=11){o.movable=!0;var a=500,h={x:{from:o.x,to:parseFloat(s[7]),dur:a,delay:0},y:{from:o.y,to:parseFloat(s[8]),dur:a,delay:0}};if(""!==s[9]&&(a=parseInt(s[9],10),h.x.dur=a,h.y.dur=a),""!==s[10]&&(h.x.delay=parseInt(s[10],10),h.y.delay=parseInt(s[10],10)),s.length>11&&(o.shadow="false"!==s[11]&&!1!==s[11],null!=s[12]&&(o.font=s[12]),s.length>14)){"relative"===o.position&&(this._logBadComments&&console.warn("Cannot mix relative and absolute positioning!"),o.position="absolute");for(var l=s[14],p={x:h.x.from,y:h.y.from},c=[],u=new RegExp("([a-zA-Z])\\s*(\\d+)[, ](\\d+)","g"),d=l.split(/[a-zA-Z]/).length-1,m=u.exec(l);null!==m;){switch(m[1]){case"M":p.x=parseInt(m[2],10),p.y=parseInt(m[3],10);break;case"L":c.push({x:{from:p.x,to:parseInt(m[2],10),dur:a/d,delay:0},y:{from:p.y,to:parseInt(m[3],10),dur:a/d,delay:0}}),p.x=parseInt(m[2],10),p.y=parseInt(m[3],10)}m=u.exec(l)}h=null,o.motion=c}null!==h&&o.motion.push(h)}o.dur=2500,s[3]<12&&(o.dur=1e3*s[3]);var f=s[2].split("-");if(null!=f&&f.length>1){var y=parseFloat(f[0]),g=parseFloat(f[1]);o.opacity=y,y!==g&&(o.alpha={from:y,to:g})}}catch(t){this._logBadComments&&(console.warn("Error occurred in JSON parsing. Could not parse comment."),console.log("[DEBUG] "+n))}else 8===o.mode?o.code=n:this._logBadComments&&(console.warn("Unknown comment type : "+o.mode+". Not doing further parsing."),console.log("[DEBUG] "+n));return null!==o.text&&"string"==typeof o.text&&(o.text=o.text.replace(/\u25a0/g,"█")),o},t.XMLParser.prototype.parseMany=function(t){var e=[];try{e=t.getElementsByTagName("d")}catch(t){return null}for(var r=[],i=0;i<e.length;i++){var n=this.parseOne(e[i]);null!==n&&r.push(n)}return r},t.TextParser=function(e){this._allowInsecureDomParsing=!0,this._attemptEscaping=!0,this._canSecureNativeParse=!1,"object"==typeof e&&(this._allowInsecureDomParsing=!1!==e.allowInsecureDomParsing,this._attemptEscaping=!1!==e.attemptEscaping),"undefined"!=typeof document&&document&&document.createElement||(this._allowInsecureDomParsing=!1),"undefined"!=typeof DOMParser&&null!==DOMParser&&(this._canSecureNativeParse=!0),(this._allowInsecureDomParsing||this._canSecureNativeParse)&&(this._xmlParser=new t.XMLParser(e))},t.TextParser.prototype.parseOne=function(t){if(this._allowInsecureDomParsing){var e=t;this._attemptEscaping&&(e=i(e));var r=document.createElement("div");r.innerHTML=e;var n=r.getElementsByTagName("d");return 1!==n.length?null:this._xmlParser.parseOne(n[0])}if(this._canSecureNativeParse){var o=new DOMParser;return this._xmlParser.parseOne(o.parseFromString(t,"application/xml"))}throw new Error("Secure native js parsing not implemented yet.")},t.TextParser.prototype.parseMany=function(t){if(this._allowInsecureDomParsing){var e=t;this._attemptEscaping&&(e=i(e));var r=document.createElement("div");return r.innerHTML=e,this._xmlParser.parseMany(r)}if(this._canSecureNativeParse){var n=new DOMParser;return this._xmlParser.parseMany(n.parseFromString(t,"application/xml"))}throw new Error("Secure native js parsing not implemented yet.")},t}(),AcfunFormat=function(){var t={};return t.JSONParser=function(t){this._logBadComments=!0,this._logNotImplemented=!1,"object"==typeof t&&(this._logBadComments=!1!==t.logBadComments,this._logNotImplemented=!0===t.logNotImplemented)},t.JSONParser.prototype.parseOne=function(t){var e={};if("object"!=typeof t||null==t||!t.hasOwnProperty("c"))return null;var r=t.c.split(",");if(r.length>=6){if(e.stime=1e3*parseFloat(r[0]),e.color=parseInt(r[1]),e.mode=parseInt(r[2]),e.size=parseInt(r[3]),e.hash=r[4],e.date=parseInt(r[5]),e.position="absolute",7!==e.mode)e.text=t.m.replace(/(\/n|\\n|\n|\r\n|\\r)/g,"\n"),e.text=e.text.replace(/\r/g,"\n"),e.text=e.text.replace(/\s/g," ");else{try{var i=JSON.parse(t.m)}catch(t){return this._logBadComments&&(console.warn("Error parsing internal data for comment"),console.log("[Dbg] "+e.text)),null}if(e.position="relative",e.text=i.n,e.text=e.text.replace(/\ /g," "),"number"==typeof i.a?e.opacity=i.a:e.opacity=1,"object"==typeof i.p?(e.x=i.p.x/1e3,e.y=i.p.y/1e3):(e.x=0,e.y=0),"number"==typeof i.c)switch(i.c){case 0:e.align=0;break;case 2:e.align=1;break;case 6:e.align=2;break;case 8:e.align=3;break;default:this._logNotImplemented&&console.log("Cannot handle aligning to center! AlignMode="+i.c)}if(e.axis=0,e.shadow=i.b,e.dur=4e3,"number"==typeof i.l&&(e.dur=1e3*i.l),null!=i.z&&i.z.length>0){e.movable=!0,e.motion=[];for(var n=0,o={x:e.x,y:e.y,alpha:e.opacity,color:e.color},s=0;s<i.z.length;s++){var a=null!=i.z[s].l?1e3*i.z[s].l:500;n+=a;var h={};i.z[s].hasOwnProperty("rx")&&"number"==typeof i.z[s].rx&&this._logNotImplemented&&console.log("Encountered animated x-axis rotation. Ignoring."),i.z[s].hasOwnProperty("e")&&"number"==typeof i.z[s].e&&this._logNotImplemented&&console.log("Encountered animated y-axis rotation. Ignoring."),i.z[s].hasOwnProperty("d")&&"number"==typeof i.z[s].d&&this._logNotImplemented&&console.log("Encountered animated z-axis rotation. Ignoring."),i.z[s].hasOwnProperty("x")&&"number"==typeof i.z[s].x&&(h.x={from:o.x,to:i.z[s].x/1e3,dur:a,delay:0}),i.z[s].hasOwnProperty("y")&&"number"==typeof i.z[s].y&&(h.y={from:o.y,to:i.z[s].y/1e3,dur:a,delay:0}),o.x=h.hasOwnProperty("x")?h.x.to:o.x,o.y=h.hasOwnProperty("y")?h.y.to:o.y,i.z[s].hasOwnProperty("t")&&"number"==typeof i.z[s].t&&i.z[s].t!==o.alpha&&(h.alpha={from:o.alpha,to:i.z[s].t,dur:a,delay:0},o.alpha=h.alpha.to),i.z[s].hasOwnProperty("c")&&"number"==typeof i.z[s].c&&i.z[s].c!==o.color&&(h.color={from:o.color,to:i.z[s].c,dur:a,delay:0},o.color=h.color.to),e.motion.push(h)}e.dur=n+(e.moveDelay?e.moveDelay:0)}i.hasOwnProperty("w")&&(i.w.hasOwnProperty("f")&&(e.font=i.w.f),i.w.hasOwnProperty("l")&&Array.isArray(i.w.l)&&i.w.l.length>0&&this._logNotImplemented&&console.log("[Dbg] Filters not supported! "+JSON.stringify(i.w.l))),null!=i.r&&null!=i.k&&(e.rX=i.r,e.rY=i.k)}return e}return this._logBadComments&&(console.warn("Dropping this comment due to insufficient parameters. Got: "+r.length),console.log("[Dbg] "+t.c)),null},t.JSONParser.prototype.parseMany=function(t){if(!Array.isArray(t))return null;for(var e=[],r=0;r<t.length;r++){var i=this.parseOne(t[r]);null!==i&&e.push(i)}return e},t.TextParser=function(e){this._jsonParser=new t.JSONParser(e)},t.TextParser.prototype.parseOne=function(t){try{return this._jsonParser.parseOne(JSON.parse(t))}catch(t){return console.warn(t),null}},t.TextParser.prototype.parseMany=function(t){try{return this._jsonParser.parseMany(JSON.parse(t))}catch(t){return console.warn(t),null}},t}(),CommonDanmakuFormat=function(){var t={},e=function(t){return"number"==typeof t.mode&&"number"==typeof t.stime&&((8!==t.mode||"string"==typeof t.code)&&"string"==typeof t.text)};return t.JSONParser=function(){},t.JSONParser.prototype.parseOne=function(t){return e(t)?t:null},t.JSONParser.prototype.parseMany=function(t){return t.every(e)?t:null},t.XMLParser=function(){},t.XMLParser.prototype.parseOne=function(t){var e={};try{e.stime=parseInt(t.getAttribute("stime")),e.mode=parseInt(t.getAttribute("mode")),e.size=parseInt(t.getAttribute("size")),e.color=parseInt(t.getAttribute("color")),e.text=t.textContent}catch(t){return null}return e},t.XMLParser.prototype.parseMany=function(t){try{var e=t.getElementsByTagName("comment")}catch(t){return null}for(var r=[],i=0;i<e.length;i++){var n=this.parseOne(e[i]);null!==n&&r.push(n)}return r},t}();
 
 function isMobile(){var e,t=!1;return e=navigator.userAgent||navigator.vendor||window.opera,(/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(e)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(e.substr(0,4)))&&(t=!0),t}var CommentLoader=function(){function t(){this.parseOne=function(){throw new Error("Not Implemented")},this.parseMany=function(){throw new Error("Not Implemented")}}function e(e){this._commentManager=e,this._responseType="text/xml",this._parser=new t}var a=["text/xml","text/plain","application/json"];return e.prototype.setParser=function(e){return this._parser=e,this},e.prototype.setType=function(e){if(a.indexOf(e)<0)throw new Error("Unknown type: "+e);return this._responseType=e,this},e.prototype._fetch=function(e,t){return fetch(t,{method:e}).then(function(e){if(!e.ok)throw new Error("HTTP error, status = "+e.status);if("application/json"===this._responseType)return e.json();if("text/plain"===this._responseType)return e.text();if("text/xml"===this._responseType)return e.text().then(function(e){return(new DOMParser).parseFromString(e,this._responseType)}.bind(this));throw new Error("Unrecognized response type")}.bind(this))},e.prototype.load=function(e,a){return new Promise(function(e,t){e((new DOMParser).parseFromString(a,"text/xml"))}).then(function(e){return this._parser.parseMany(e)}.bind(this)).then(function(e){this._commentManager.load(e)}.bind(this)).catch(function(e){alert(e)})},e}(),ABP={version:"0.8.0"};!function(){"use strict";if(ABP){var x=function(e,t,a,n){var i=null;if("text"===e)return document.createTextNode(t);for(var r in i=document.createElement(e),t)if("style"!==r&&"className"!==r)i.setAttribute(r,t[r]);else if("className"===r)i.className=t[r];else for(var o in t.style)i.style[o]=t.style[o];if(a)for(var s=0;s<a.length;s++)null!=a[s]&&i.appendChild(a[s]);return n&&"function"==typeof n&&n(i),i},P=function(e,t){return null!=e&&0<=e.className.split(" ").indexOf(t)},B=function(e,t){var a={};for(var n in t)e&&void 0!==e[n]?a[n]=e[n]:a[n]=t[n];return a};ABP.create=function(e,t){var a,n=e;if(t=B(t=t||{},{replaceMode:!0,width:512,height:384,src:"",mobile:!1}),"string"==typeof e&&(a=e,n=document.getElementById(a)),P(n,"ABP-Unit"))i=n;else{var i=x("div",{className:"ABP-Unit",style:{width:t.width+"px",height:t.height+"px"}});n.appendChild(i)}0<i.children.length&&t.replaceMode&&(i.innerHTML="");var r=[],o=[];if("string"==typeof t.src)t.src=x("video",{autobuffer:"true",dataSetup:"{}"},[x("source",{src:t.src})]),r.push(t.src);else if(t.src.hasOwnProperty("playlist"))for(var s=t.src.playlist,l=0;l<s.length;l++){if(s[l].hasOwnProperty("sources")){var d=[];for(var c in s[l].sources)d.push(x("source",{src:s[l].sources[c],type:c}));r.push(x("video",{autobuffer:"true",dataSetup:"{}"},d))}else s[l].hasOwnProperty("video")?r.push(s[l].video):console.log("No recognized format");o.push(s[l].comments)}else r.push(t.src);i.appendChild(x("div",{className:"ABP-Video",tabindex:"10"},[x("div",{className:"ABP-Container"}),r[0]])),i.appendChild(x("div",{className:"ABP-Text"},[x("input",{type:"text"})])),i.appendChild(x("div",{className:"ABP-Control"},[x("div",{className:"button ABP-Play"}),x("div",{className:"progress-bar"},[x("div",{className:"bar dark"}),x("div",{className:"bar"})]),x("div",{className:"button ABP-CommentShow"}),x("div",{className:"button ABP-FullScreen"})]));var u=ABP.bind(i,t.mobile);if(0<r.length){u.loader=new CommentLoader(u.cmManager).setParser(new BilibiliFormat.XMLParser);var m=r[0];u.gotoNext=function(){var e=r.indexOf(m)+1;if(e<r.length){(m=r[e]).style.display="";var t=u.video.parentNode;t.removeChild(u.video),t.appendChild(m),u.video.style.display="none",u.video=m,u.swapVideo(m),m.addEventListener("ended",function(){u.gotoNext()})}e<o.length&&null!==o[e]&&u.loader.load("GET",o[e])},m.addEventListener("ended",function(){u.gotoNext()}),0<o.length&&u.loader.load("GET",o[0])}return u},ABP.load=function(e,t,a,n){},ABP.bind=function(n,e,t){var o={btnPlay:null,barTime:null,barLoad:null,divComment:null,btnFull:null,btnDm:null,video:null,divTextField:null,txtText:null,cmManager:null,defaults:{w:0,h:0},state:B(t,{fullscreen:!1,commentVisible:!0,allowRescale:!1,autosize:!1}),createPopup:function(e,t){if(!0===n.hasPopup)return!1;var a=x("div",{className:"ABP-Popup"},[x("text",e)]);return a.remove=function(){a.isRemoved||(a.isRemoved=!0,n.removeChild(a),n.hasPopup=!1)},n.appendChild(a),n.hasPopup=!0,"number"==typeof t&&setTimeout(function(){a.remove()},t),a},removePopup:function(){for(var e=n.getElementsByClassName("ABP-Popup"),t=0;t<e.length;t++)null!=e[t].remove?e[t].remove():e[t].parentNode.removeChild(e[t]);n.hasPopup=!1},swapVideo:null};if(o.swapVideo=function(e){e.addEventListener("timeupdate",function(){b||(o.barTime.style.width=e.currentTime/e.duration*100+"%")}),e.addEventListener("ended",function(){o.btnPlay.className="button ABP-Play",o.barTime.style.width="0%"}),e.addEventListener("progress",function(){if(null!=this.buffered){try{this.buffered.start(0);var e=this.buffered.end(0)}catch(e){return}var t=e/this.duration*100;o.barLoad.style.width=t+"%"}}),e.addEventListener("loadedmetadata",function(){if(null!=this.buffered){try{this.buffered.start(0);var e=this.buffered.end(0)}catch(e){return}var t=e/this.duration*100;o.barLoad.style.width=t+"%"}}),e.isBound=!0;var t=0;o.cmManager&&(o.cmManager.clear(),e.addEventListener("progress",function(){t==e.currentTime?(e.hasStalled=!0,o.cmManager.stop()):t=e.currentTime}),window&&window.addEventListener("resize",function(){o.cmManager.setBounds()}),e.addEventListener("timeupdate",function(){!1!==o.cmManager.display&&(e.hasStalled&&(o.cmManager.start(),e.hasStalled=!1),o.cmManager.time(Math.floor(1e3*e.currentTime)))}),e.addEventListener("play",function(){o.cmManager.start();try{var e=this.buffered.end(0)/this.duration*100;o.barLoad.style.width=e+"%"}catch(e){}}),e.addEventListener("ratechange",function(){null!=o.cmManager.def.globalScale&&0!==e.playbackRate&&(o.cmManager.def.globalScale=1/e.playbackRate,o.cmManager.rescale())}),e.addEventListener("pause",function(){o.cmManager.stop()}),e.addEventListener("waiting",function(){o.cmManager.stop()}),e.addEventListener("playing",function(){o.cmManager.start()}))},null!==n&&null!==n.getElementsByClassName){o.defaults.w=n.offsetWidth,o.defaults.h=n.offsetHeight;var a=n.getElementsByClassName("ABP-Video");if(!(a.length<=0)){var i=null;for(var r in a[0].children)if(null!=a[0].children[r].tagName&&"VIDEO"===a[0].children[r].tagName.toUpperCase()){i=a[0].children[r];break}a[0]&&e&&(a[0].style.bottom="0px");var s=a[0].getElementsByClassName("ABP-Container");if(0<s.length&&(o.divComment=s[0]),null!==i){o.video=i;var l=n.getElementsByClassName("ABP-Play");if(!(l.length<=0)){o.btnPlay=l[0];var d=n.getElementsByClassName("progress-bar");if(!(d.length<=0)){o.barHitArea=d[0];var c=d[0].getElementsByClassName("bar");o.barTime=c[0],o.barLoad=c[1];var u=n.getElementsByClassName("ABP-FullScreen");if(!(u.length<=0)){o.btnFull=u[0];var m=n.getElementsByClassName("ABP-Text");if(0<m.length){o.divTextField=m[0];var p=m[0].getElementsByTagName("input");0<p.length&&(o.txtText=p[0])}var v=n.getElementsByClassName("ABP-CommentShow");if(0<v.length&&(o.btnDm=v[0]),"undefined"!=typeof CommentManager&&(o.cmManager=new CommentManager(o.divComment),o.cmManager.display=!0,o.cmManager.init(),o.cmManager.clear(),window&&window.addEventListener("resize",function(){o.cmManager.setBounds()})),e){var h=n.getElementsByClassName("ABP-Control");0<h.length&&(o.controlBar=h[0]);var f=-1,g=function(){o.controlBar.style.display="none",o.divTextField.style.display="none",o.divComment.style.bottom="0px",o.cmManager.setBounds()};o.divComment.style.bottom=o.controlBar.offsetHeight+o.divTextField.offsetHeight+"px";var y=function(){o.controlBar.style.display="",o.divTextField.style.display="",o.divComment.style.bottom=o.controlBar.offsetHeight+o.divTextField.offsetHeight+"px";try{-1!=f&&(clearInterval(f),f=-1),f=setInterval(function(){document.activeElement!==o.txtText&&(g(),clearInterval(f),f=-1)},2500)}catch(e){console.log(e)}};n.addEventListener("touchmove",y),n.addEventListener("mousemove",y),f=setTimeout(function(){g()},4e3)}if(!0!==i.isBound){o.swapVideo(i),o.btnFull.addEventListener("click",function(){o.state.fullscreen=P(n,"ABP-FullScreen"),(o.state.fullscreen?function(e,t){if(null!=e){var a=e.className.split(" ");0<=a.indexOf(t)&&a.splice(a.indexOf(t),1),e.className=a.join(" ")}}:function(e,t){if(null!=e){var a=e.className.split(" ");a.indexOf(t)<0&&a.push(t),e.className=a.join(" ")}})(n,"ABP-FullScreen"),o.state.fullscreen=!o.state.fullscreen,o.cmManager&&o.cmManager.setBounds(),o.state.allowRescale&&(o.state.fullscreen?0<o.defaults.w&&(o.cmManager.def.scrollScale=n.offsetWidth/o.defaults.w):o.cmManager.def.scrollScale=1)}),o.btnDm.addEventListener("click",function(){0==o.cmManager.display?(o.cmManager.display=!0,o.cmManager.start()):(o.cmManager.display=!1,o.cmManager.clear(),o.cmManager.stop())});var b=!(o.barTime.style.width="0%");o.barHitArea.addEventListener("mousedown",function(e){b=!0}),document.addEventListener("mouseup",function(e){b=!1}),o.barHitArea.addEventListener("mouseup",function(e){b=!1;var t=e.layerX/this.offsetWidth*o.video.duration;4<Math.abs(t-o.video.currentTime)&&o.cmManager&&o.cmManager.clear(),o.video.currentTime=t}),o.barHitArea.addEventListener("mousemove",function(e){b&&(o.barTime.style.width=100*e.layerX/this.offsetWidth+"%")}),o.btnPlay.addEventListener("click",function(){o.video.paused?(o.video.play(),this.className="button ABP-Play ABP-Pause"):(o.video.pause(),this.className="button ABP-Play")}),n.addEventListener("keydown",function(e){e&&32==e.keyCode&&document.activeElement!==o.txtText&&(o.btnPlay.click(),e.preventDefault())}),n.addEventListener("touchmove",function(e){event.preventDefault()});var M=null;n.addEventListener("touchstart",function(e){0<e.targetTouches.length&&(M=e.targetTouches[0])}),n.addEventListener("touchend",function(e){if(0<e.changedTouches.length&&null!=M){var t=e.changedTouches[0].pageX-M.pageX,a=e.changedTouches[0].pageY-M.pageY;if(Math.abs(t)<20&&Math.abs(a)<20)return void(M=null);Math.abs(t)>3*Math.abs(a)?0<t?o.video.paused&&o.btnPlay.click():o.video.paused||o.btnPlay.click():Math.abs(a)>3*Math.abs(t)&&(o.video.volume=a<0?Math.min(1,o.video.volume+.1):Math.max(0,o.video.volume-.1)),M=null}})}if(null!==o.txtText&&o.txtText.addEventListener("keyup",function(e){if(null!=this.value)if(/^!/.test(this.value)?this.style.color="#5DE534":this.style.color="",null!=e&&13===e.keyCode){if(""==this.value)return;if(/^!/.test(this.value)){var t=this.value.substring(1).split(":");switch(t.shift()){case"help":o.createPopup("提示信息：",2e3);break;case"speed":case"rate":case"spd":if(t.length<1)o.createPopup("速度调节：输入百分比【 1% - 300% 】",2e3);else{var a=parseInt(t[0]);if(NaN!=a){var n=Math.min(Math.max(a,1),300);o.video.playbackRate=n/100}null!==o.cmManager&&o.cmManager.clear()}break;case"off":o.cmManager.display=!1,o.cmManager.clear(),o.cmManager.stop();break;case"on":o.cmManager.display=!0,o.cmManager.start();break;case"cls":case"clear":null!==o.cmManager&&o.cmManager.clear();break;case"pp":case"pause":o.video.pause();break;case"p":case"play":o.video.play();break;case"vol":case"volume":if(0==t.length)o.createPopup("目前音量："+Math.round(100*o.video.volume)+"%",2e3);else{var i=parseInt(t[0]);null!==i&&NaN!==i&&(o.video.volume=Math.max(Math.min(i,100),0)/100),o.createPopup("目前音量："+Math.round(100*o.video.volume)+"%",2e3)}}}}else if(null!=e&&38===e.keyCode)if(e.shiftKey){if(null!==o.cmManager){var r=Math.min(Math.round(100*o.cmManager.def.opacity)+5,100);o.cmManager.def.opacity=r/100,o.removePopup();o.createPopup("弹幕透明度："+Math.round(r)+"%",800)}}else{o.video.volume=Math.round(Math.min(100*o.video.volume+5,100))/100,o.removePopup();o.createPopup("目前音量："+Math.round(100*o.video.volume)+"%",800)}else if(null!=e&&40===e.keyCode)if(e.shiftKey){if(null!==o.cmManager){r=Math.max(Math.round(100*o.cmManager.def.opacity)-5,0);o.cmManager.def.opacity=r/100,o.removePopup();o.createPopup("弹幕透明度："+Math.round(r)+"%",800)}}else{o.video.volume=Math.round(Math.max(100*o.video.volume-5,0))/100,o.removePopup();o.createPopup("目前音量："+Math.round(100*o.video.volume)+"%",800)}}),"undefined"!=typeof CommentManager&&o.state.autosize){var w=function(){if(0!==i.videoHeight&&0!==i.videoWidth){var e=i.videoHeight/i.videoWidth,t=n.offsetWidth,a=n.offsetHeight;a/t<e?(n.style.width=a/e+"px",n.style.height=a+"px"):(n.style.width=t+"px",n.style.height=t*e+"px"),o.cmManager.setBounds()}};i.addEventListener("loadedmetadata",w),w()}return o}}}}}}}}}();
@@ -261,7 +1018,7 @@ function init(){
     }
     else if(window.location.href.includes("video.eyny.com")) {
         DisplayInput(InputPlaceholderSearch);
-        CreateButton('Search Danmaku',function () {
+        var btn=CreateButton('Search Danmaku',function () {
             //title input correct
             if(input.value.match(/^(.*) (\d{1,4})$/)!=null){
                 var arr=input.value.match(/(.*) (\d{1,4})/);
@@ -298,8 +1055,15 @@ function init(){
                     TucaoStatus=3;
                 }
                 GetDanmaku(eyny);
-                input.value='Player loading...';
-            }
+                btn.innerHTML='Player loading...';
+                var CheckValue=setInterval(function () {
+                    if(abp!=null){
+                        btn.innerHTML='Done';
+                        clearInterval(CheckValue);
+                    }
+                },2000);
+
+    }
         });
         input.addEventListener("mouseover",function () {
                 input.setAttribute('placeholder','Search format example: 歌舞伎町夏洛克 07');
@@ -312,7 +1076,7 @@ function init(){
     }
     else if(window.location.href.includes("www.tucao.one")) {
         DisplayInput(InputPlaceholder);
-        CreateButton('Search Danmaku',function () {
+        var btn=CreateButton('Search Danmaku',function () {
             //first time search
             if(input.value==""&&datalist==null){
                 input.value="Searching...";
@@ -352,7 +1116,13 @@ function init(){
                     TucaoStatus=3;
                 }
                 GetDanmaku(TucaoAlternate);
-                input.value='Player loading...';
+                btn.innerHTML='Player loading...';
+                var CheckValue=setInterval(function () {
+                    if(abp!=null){
+                        btn.innerHTML='Done';
+                        clearInterval(CheckValue);
+                    }
+                },2000);
             }
         });
         var play_ren=document.querySelector("#play_ren");
@@ -377,29 +1147,29 @@ function eyny(comments){
     var fixwidth = document.querySelector("div.fixwidth");
     var div=document.querySelector("div");
     var video = VideoContainer.querySelector("#mediaplayer");
-    var ObjectEyny = new ObjectABP(VideoContainer, video, comments, width, height);
-    ABP_Init(ObjectEyny);
-    var ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
-    var ButtonFullscreen_ABP=ABP_Unit.querySelector("div.button.ABP-FullScreen");
-    ButtonFullscreen_ABP.addEventListener("click",function () {
-        setTimeout(function () {
-            debug("Fullscreen");
-            video.style="width:100%!important; height:100%!important;"
-            debug("video.style.height: " + video.style.height);
-            VideoContainer.style.width=width+"px";
-            VideoContainer.style.height=height+"px";
-            if(fixwidth.style=="display:none;"){
-                fixwidth.style="display:block;";
-                div.style="display:block;";
+    var object = new ObjectABP(VideoContainer, video, comments, width, height);
+        ABP_Init(object);
+        var ABP_Unit = VideoContainer.querySelector("div.ABP-Unit");
+        var ButtonFullscreen_ABP = ABP_Unit.querySelector("div.button.ABP-FullScreen");
+        ButtonFullscreen_ABP.addEventListener("click", function () {
+            setTimeout(function () {
+                debug("Fullscreen");
+                video.style = "width:100%!important; height:100%!important;"
+                debug("video.style.height: " + video.style.height);
+                VideoContainer.style.width = width + "px";
+                VideoContainer.style.height = height + "px";
+                if (fixwidth.style == "display:none;") {
+                    fixwidth.style = "display:block;";
+                    div.style = "display:block;";
 
-            }
-            else {
-                fixwidth.style="display:none;";
-                div.style="display:none;";
+                }
+                else {
+                    fixwidth.style = "display:none;";
+                    div.style = "display:none;";
 
-            }
-        },500);
-    });
+                }
+            }, 500);
+        });
 }
 
 function anime1(comments){
@@ -411,31 +1181,26 @@ function anime1(comments){
     rewind.style.display="none";
     display.style.display="none";
     var object = new ObjectABP(VideoContainer, video, comments, 640,360);
-    try{
-        ABP_Init(object);
-    }
-    catch(e){
-        debug("Error: "+e);
-    }
-    var ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
-    VideoContainer.insertBefore(ABP_Unit,VideoContainer.firstChild);
-    var ButtonFullscreen_ABP=ABP_Unit.querySelector("div.button.ABP-FullScreen");
-    var ButtonFullscreen_Anime1=VideoContainer.querySelector("div.jw-icon.jw-icon-inline.jw-button-color.jw-reset.jw-icon-fullscreen");
-    ButtonFullscreen_Anime1.addEventListener("mousedown",function (){
-        debug("Fullscreen");
-        ButtonFullscreen_ABP.click();
-    });
-    for(var Class of VideoContainer.classList){
-        VideoContainer.classList.toggle(Class,false);
-    }
+            ABP_Init(object);
+            var ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
+            VideoContainer.insertBefore(ABP_Unit,VideoContainer.firstChild);
+            var ButtonFullscreen_ABP=ABP_Unit.querySelector("div.button.ABP-FullScreen");
+            var ButtonFullscreen_Anime1=VideoContainer.querySelector("div.jw-icon.jw-icon-inline.jw-button-color.jw-reset.jw-icon-fullscreen");
+            ButtonFullscreen_Anime1.addEventListener("mousedown",function (){
+                debug("Fullscreen");
+                ButtonFullscreen_ABP.click();
+            });
+            for(var Class of VideoContainer.classList){
+                VideoContainer.classList.toggle(Class,false);
+            }
 }
 
 function animeone(comments) {
     debug("animeone");
     var VideoContainer=document.querySelector("body");
     var video=VideoContainer.querySelector("#player_html5_api");
-    var ObjectAnimeone=new ObjectABP(VideoContainer,video,comments,640,360);
-    ABP_Init(ObjectAnimeone);
+    var object=new ObjectABP(VideoContainer,video,comments,640,360);
+    ABP_Init(object);
 
 }
 
@@ -446,12 +1211,11 @@ function TucaoAlternate(comments) {
     var OriginPlayer=VideoContainer.querySelector("#player");
     OriginPlayer.style.display="none";
     var object=new ObjectABP(VideoContainer,video,comments,964,556);
-    ABP_Init(object);
+        ABP_Init(object);
 
-    var ABP_Unit=VideoContainer.querySelector("div.ABP-Unit");
-    document.querySelector("#show_share").style.display = "none";
-    document.querySelector("div.footer").style.display = "none";
-
+        var ABP_Unit = VideoContainer.querySelector("div.ABP-Unit");
+        document.querySelector("#show_share").style.display = "none";
+        document.querySelector("div.footer").style.display = "none";
 }
 
 
@@ -484,6 +1248,7 @@ function bahamut(){
             href = animelook.href;
             href = href.replace(/https?:\/\/.*\/(animeRef\.php\?sn=\d*)$/, function(match, $1, $2, offset, original){ return 'https://ani.gamer.com.tw/'+$1;})
             debug(href);
+            danmakuSource=href;
             var GetAnime = new ObjectRequest(href);
             request(GetAnime, function (responseDetails) {
                 responseText = responseDetails.responseText;
@@ -540,6 +1305,7 @@ function bilibili() {
                 }
             }
             href=bangumi_item.querySelector("a").href;
+            danmakuSource=href;
             var GetAnime=new ObjectRequest(href);
             request(GetAnime,function (responseDetails) {
                 responseText=responseDetails.responseText;
@@ -612,7 +1378,10 @@ function TucaoSearch() {
                     debug("cid: "+cid);
                     var href="https://www.tucao.one/index.php?m=mukio&c=index&a=init&playerID="+cid;
                     var SearchResultTitle=dom.querySelector("h1.show_title").textContent;
-                    SearchResult = "Search Result: [Tucao] "+SearchResultTitle+" - "+href;
+                    var array=SearchResultTitle.match(/【.*】(.*)\s(\d{1,4})/);
+                    SearchResultTitle=array[1];
+                    var episode=array[2];
+                    SearchResult = "Search Result: [Tucao] ["+SearchResultTitle+"] ["+episode+"] - "+href;
                 }
                 InsertOption( SearchResult);
                 acfun();
@@ -647,6 +1416,7 @@ function acfun(){
         else {
             href = "https://www.acfun.cn/bangumi/aa"+json.bgmList[0].id;
             debug(href);
+            danmakuSource=href;
             var GetAnime = new ObjectRequest(href);
             request(GetAnime, function (responseDetails) {
                 responseText = responseDetails.responseText;
@@ -793,6 +1563,7 @@ function CreateButton(text,func){
     btn.addEventListener('click',func);
     input.parentElement.insertBefore(btn, input.nextElementSibling);
     //body.insertBefore(btn, input.nextElementSibling);
+    return btn;
 }
 
 function DisplayInput(href) {
@@ -1052,14 +1823,14 @@ function pad(num, n) {
 
 function request(object,func) {
     debug('requestUrl: '+object.url)
-    var retries = 0;
+    var retries = 3;
     GM_xmlhttpRequest({
         method: object.method,
         url: object.url,
         data: object.data,
         headers: object.headers,
         overrideMimeType: object.charset,
-        timeout:20000,
+        timeout:60000,
         //synchronous: true
         onload: function (responseDetails) {
             debug(responseDetails);
@@ -1199,24 +1970,7 @@ function MessagePush(messages) {
 
 function ABP_Init(object){
     try{
-        //trigger insert tucao.one danmaku(and enable danmaku post function)
-        if(TucaoEnable&&title!=null&&EpisodeCurrent!=null&&TucaoStatus==1){
-            var DanmakuLink;
-            try{
-                DanmakuLink=GM_getValue("DanmakuLinkTucao");
-            }
-            catch(e){
-                debug("OtherInsertTucao Error: "+ e);
-            }
-            debug('DanmakuLink: '+DanmakuLink);
-            if(/(https:\/\/www\.tucao\.one\/index\.php\?m=mukio&c=index&a=init&playerID=\d*-\d*-\d*-\d*)/.test(DanmakuLink)) {
-                GetDanmaku(OtherInsertTucao, object);
-                return;
-            }
-        }
-        else if(TucaoEnable){
-            messages.push(['[Error] tucao.one search failed, "!dm" unavailable.',5000,null]);
-        }
+
         debug("ABP Init");
         //try ger value of danmaku speed
         var DanmakuSpeed;
@@ -1338,35 +2092,21 @@ function ABP_Init(object){
 
 }
 
-function GetDanmaku(func,object=null) {
+function GetDanmaku(func) {
     IsDownload=false;
-    debug(func.name);
     var DanmakuLink
-    if(func.name!="OtherInsertTucao"){
+    if(window.location.href.includes("i.animeone.me")||window.location.href.includes("v.anime1.me")){
 
-        if(window.location.href.includes("i.animeone.me")||window.location.href.includes("v.anime1.me")){
-
-            try{
-                DanmakuLink=GM_getValue("DanmakuLink");
-                DanmakuLink=DanmakuLink.match(matching);
-            }
-            catch(e){
-                //debug("Error: "+ e);
-            }
+        try{
+            DanmakuLink=GM_getValue("DanmakuLink");
+            DanmakuLink=DanmakuLink.match(matching);
         }
-        else{
-            DanmakuLink=input.value.match(matching);
+        catch(e){
+            //debug("Error: "+ e);
         }
     }
     else{
-        try{
-            DanmakuLink=GM_getValue("DanmakuLinkTucao");
-            DanmakuLink=DanmakuLink.match(/(https:\/\/www\.tucao\.one\/index\.php\?m=mukio&c=index&a=init&playerID=\d*-\d*-\d*-\d*)/);
-        }
-        catch(e){
-            debug("OtherInsertTucao Error: "+ e);
-            return;
-        }
+        DanmakuLink=input.value.match(matching);
     }
     debug(DanmakuLink);
     if(DanmakuLink!=null){
@@ -1406,8 +2146,7 @@ function GetDanmaku(func,object=null) {
         request(danmaku,function (responseDetails) {
             var responseText = responseDetails.responseText;
             var comments = responseText;
-            if(DanmakuLink.includes("https://ani.gamer.com.tw/ajax/danmuGet.php")){
-                debug("Comments: " + comments);
+            if(responseDetails.finalUrl.includes("https://ani.gamer.com.tw/ajax/danmuGet.php")){
                 var json=JSON.parse(comments);
                 debug("Comments: " + comments);
                 var parser = new DOMParser();
@@ -1446,11 +2185,11 @@ function GetDanmaku(func,object=null) {
                 }
                 comments= (new XMLSerializer()).serializeToString(xmlDoc );
             }
-            else if(DanmakuLink.includes("danmu.aixifan.com")){
+            else if(responseDetails.finalUrl.includes("danmu.aixifan.com")){
                 var json = JSON.parse(comments);
                     comments=AcfunParse(json);
             }
-            else if(window.location.href.includes("www.tucao.one")&&DanmakuLink.includes("api.bilibili.com")){
+            else if(window.location.href.includes("www.tucao.one")&&responseDetails.finalUrl.includes("api.bilibili.com")){
                 var parser = new DOMParser();
                 var xmlDoc   = parser.parseFromString(comments, "application/xml");
                 var nodes=xmlDoc.getElementsByTagName("d");
@@ -1466,7 +2205,7 @@ function GetDanmaku(func,object=null) {
                 }
                 comments= (new XMLSerializer()).serializeToString(xmlDoc );
             }
-            else if(!window.location.href.includes("www.tucao.one")&&DanmakuLink.includes("tucao.one")){
+            else if(!window.location.href.includes("www.tucao.one")&&responseDetails.finalUrl.includes("tucao.one")){
                 var parser = new DOMParser();
                 var xmlDoc   = parser.parseFromString(comments, "application/xml");
                 var nodes=xmlDoc.getElementsByTagName("d");
@@ -1483,7 +2222,51 @@ function GetDanmaku(func,object=null) {
                 comments= (new XMLSerializer()).serializeToString(xmlDoc );
             }
 
-            func(comments,object);
+            //trigger insert tucao.one danmaku(and enable danmaku post function)
+            if(TucaoEnable&&title!=null&&EpisodeCurrent!=null&&TucaoStatus==1){
+                var DanmakuLink;
+                try{
+                    DanmakuLink=GM_getValue("DanmakuLinkTucao");
+                }
+                catch(e){
+                    debug("OtherInsertTucao Error: "+ e);
+                }
+                debug('DanmakuLink: '+DanmakuLink);
+                //this condition for anime1
+                if(/(https:\/\/www\.tucao\.one\/index\.php\?m=mukio&c=index&a=init&playerID=\d*-\d*-\d*-\d*)/.test(DanmakuLink)) {
+                    var danmaku=new ObjectRequest(DanmakuLink);
+                    request(danmaku,function (responseDetails) {
+                        var responseText = responseDetails.responseText;
+                        var tucaoComments = responseText;
+                    if(!window.location.href.includes("www.tucao.one")&&responseDetails.finalUrl.includes("tucao.one")){
+                            var parser = new DOMParser();
+                            var xmlDoc   = parser.parseFromString(tucaoComments, "application/xml");
+                            var nodes=xmlDoc.getElementsByTagName("d");
+                            for (var node of nodes) {
+                                //debug(node.innerHTML);
+                                var p=node.getAttribute("p");
+                                //debug('p: '+p);
+                                var params = p.split(",");
+                                var time=params[0];
+                                p=p.replace(time,parseFloat(time)-parseFloat(TucaoDelay));
+                                //debug('p: '+p);
+                                node.setAttribute('p',p);
+                            }
+                        tucaoComments= (new XMLSerializer()).serializeToString(xmlDoc );
+                        }
+                        comments=OtherInsertTucao(tucaoComments, comments);
+                        func(comments);
+                    });
+                    return;
+                }
+            }
+            else {
+                debug('here');
+                if (TucaoEnable) {
+                    messages.push(['[Error] tucao.one search failed, "!dm" unavailable.', 5000, null]);
+                }
+                func(comments);
+            }
         });
         return true;
     }
@@ -1743,23 +2526,23 @@ function InputLisener(k) {
                         }
                     }
                         break;
+                    case "source": {
+                        window.open(danmakuSource);
+                    }
+                        break;
                 }
             }
         }
     }
 }
 
-function OtherInsertTucao(comments,object){
+function OtherInsertTucao(tucaoDanmaku,mainDanmaku){
     debug("OtherInsertTucao");
-    var tucaoDanmaku=comments.replace('</i>','')
+    var tucaoDanmaku=tucaoDanmaku.replace('</i>','')
         .replace('<?xml version="1.0" encoding="utf-8"?>','')
     .replace(/(<d p='[\.\d,]*'>)(.*<\/d>)/g,
-        function(match, $1, $2, offset, original){ return $1+"[www.tucao.one]"+$2;})
-
-    var mainDanmaku=object.comments.replace('<i>',tucaoDanmaku);
-    object.comments=mainDanmaku;
-    debug('object.comments: '+object.comments);
-    ABP_Init(object)
+        function(match, $1, $2, offset, original){ return $1+"[www.tucao.one]"+$2;});
+    return mainDanmaku.replace('<i>',tucaoDanmaku);
 }
 
 
