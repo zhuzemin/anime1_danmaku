@@ -15,14 +15,14 @@ Usage:
 
 
 Other function:
-5: Download Danmaku: After "Search Danmaku", "Download Danmaku" Button will be ready, it's use for download Danmaku as ".ass" file. 
+5: Download Danmaku: After "Load Player", "Download Danmaku" Button will be ready, it's use for download Danmaku as ".ass" file. 
 6: Volume adjust: ¡ü¡ý(arrow key).
 7: Danmaku speed adjust(temporally): use command: "!dmspd:***", 
 *Type it in Input inside Player, "***" mean percentage of speed for Danmaku, (100-200%), more larger more slower, default: 150.
 8: Post Danmaku: "!dm:******", 
 *Specify Danmaku type/size/color: "!dm:******{{type,size,color}}", 
 *Type: L2R/R2L/btm/top, Size: 12/16/18/25/36/45/64, Color: black/blue/green/orange/pink/purple/red/silver/yellow/white/gold.
-9: Open Disqus(anime1.me): !comment
+9: Current Anime on anime1.me page: !anime1
 10: Open this userscript greasyfork page: !fork
 11: Open current Anime wiki page: !wiki
 12: Search current Anime theme song: !music

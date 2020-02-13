@@ -62,9 +62,7 @@ setUserPref(
 
 
 //global variate
-var Anime1Url;
 var TucaoStatus=0;
-var Anime1CommentSatus=0;
 var EpisodeCurrent=null;
 var title=null;
 var input;
@@ -111,7 +109,7 @@ var messages=[
     ["[Notice] Danmaku speed(100-200): !dmspd:***",5000,2],
     ["[Notice] Current Anime theme song: !music",5000,2],
     ["[Notice] Current Anime wiki: !wiki",5000,2],
-    ["[Notice] Current Anime comment: !comment",5000,2],
+    ["[Notice] Current Anime on anime1.me page: !anime1",5000,2],
     ["[Notice] Set alias: !alias:{{targetSite}}targetTitle",5000,2],
     ["[Notice] Home page: !fork",5000,2],
     ["[Notice] Feedback: QQ Group: 32835999",5000,5]
@@ -977,7 +975,6 @@ function init(){
                     bahamut();
                     var CheckValue=setInterval(function () {
                         if(SearchFinished&&input.value.match(matching)){
-                            DanmakuDownloaderInit();
                             btn.innerHTML='Load Player';
                             clearInterval(CheckValue);
                         }
@@ -1001,6 +998,7 @@ function init(){
                     }
                     GM_setValue("DanmakuLink", input.value);
                     btn.innerHTML="Done";
+                    DanmakuDownloaderInit();
                 }
             });
         }
@@ -1036,7 +1034,6 @@ function init(){
                 var CheckValue=setInterval(function () {
                     //search success
                     if(SearchFinished&&input.value.match(matching)){
-                        DanmakuDownloaderInit();
                         btn.innerHTML='Load Player';
                         clearInterval(CheckValue);
                     }
@@ -1067,6 +1064,7 @@ function init(){
                         clearInterval(CheckValue);
                     }
                 },2000);
+                DanmakuDownloaderInit();
 
             }
         });
@@ -1095,7 +1093,6 @@ function init(){
                 var CheckValue=setInterval(function () {
                     //search success
                     if(SearchFinished&&input.value.match(matching)){
-                        DanmakuDownloaderInit();
                         btn.innerHTML='Load Player';
                         clearInterval(CheckValue);
                     }
@@ -1129,6 +1126,7 @@ function init(){
                         clearInterval(CheckValue);
                     }
                 },2000);
+                DanmakuDownloaderInit();
             }
         });
         var play_ren=document.querySelector("#play_ren");
@@ -1451,8 +1449,8 @@ function acfun(){
 
 function Anime1Comment(){
     var DanmakuLink=GM_getValue('DanmakuLink');
-    var title=DanmakuLink.match(/\[(.*)\] \[(.*)\] \[(.*)\]/)[2];
-    title=CheckAlias('anime1.me',title);
+    var _title=DanmakuLink.match(/\[(.*)\] \[(.*)\] \[(.*)\]/)[2];
+    title=CheckAlias('anime1.me',_title);
     var href="https://anime1.me/?s="+encodeURIComponent(simplized(title,'s2t')+" "+pad(EpisodeCurrent,2));
     var search=new ObjectRequest(href);
     var SearchResult;
@@ -1461,21 +1459,13 @@ function Anime1Comment(){
         var dom = new DOMParser().parseFromString(responseText, "text/html");
         var NoResult=dom.querySelector("section.no-results.not-found");
         if(NoResult!=null){
-            if(PushEnable){
-                Anime1CommentSatus=2;
-                messages.push(['[Error] anime1.me search failed, "!comment" unavailable.',5000,null]);
-
-            }
+            abp.createPopup('[Error] anime1.me search failed.', 2000);
         }
         else {
             var main=dom.querySelector("#main");
             var item=main.querySelector("article");
-            Anime1Url=item.querySelector("a").href+"#comment";
-            if(PushEnable){
-                Anime1CommentSatus=1;
-
-                messages.push(['[Notice] anime1.me search success, "!comment" available.',5000,null]);
-            }
+            var Anime1Url=item.querySelector("a").href+"#comment";
+            window.open(Anime1Url);
         }
     });
 }
@@ -2099,23 +2089,15 @@ function ABP_Init(object){
         }
         //input add event
         abp.txtText.addEventListener("keyup",InputLisener);
-        //trigger disqus function
-        if(Anime1CommentEnable&&!window.location.href.includes("anime1.me")&&!window.location.href.includes("animeone.me")&&title!=null&&EpisodeCurrent!=null){
-            Anime1Comment(title,EpisodeCurrent);
-        }
-        else if(Anime1CommentEnable){
-            messages.push(['[Error] anime1.me search failed, "!comment" unavailable.',5000,null]);
-
-        }
         //trigger message push function
         if(PushEnable){
             var CheckValue=setInterval(function () {
                 if(
-                    ((TucaoEnable&&TucaoStatus!=0)&&(Anime1CommentEnable&&Anime1CommentSatus!=0))
+                    ((TucaoEnable&&TucaoStatus!=0))
                     ||
-                    ((TucaoEnable&&TucaoStatus!=0)||(Anime1CommentEnable&&Anime1CommentSatus!=0))
+                    ((TucaoEnable&&TucaoStatus!=0))
                     ||
-                    (!(TucaoEnable&&TucaoStatus!=0)&&!(Anime1CommentEnable&&Anime1CommentSatus!=0))
+                    (!(TucaoEnable&&TucaoStatus!=0))
 
                 ){
                     MessagePush(messages);
@@ -2334,6 +2316,8 @@ function InputLisener(k) {
                 /** Execute command **/
                 var commandPrompts = abp.txtText.value.substring(1).split(":");
                 var command = commandPrompts.shift();
+                var DanmakuLink=GM_getValue('DanmakuLink');
+                var title=DanmakuLink.match(/\[(.*)\] \[(.*)\] \[(.*)\]/)[2];
                 switch (command) {
                     case "dmspd":
                     case "DmkSpd": {
@@ -2467,31 +2451,29 @@ function InputLisener(k) {
                     case "disqus":
                     case "anime1":
                     case "comment": {
-                        if(window.location.href.includes("anime1.me")){
+                        if(window.location.href.includes("anime1.me")||window.location.href.includes("animeone.me")){
                             abp.createPopup('[Error] you already in anime1.me', 2000);
 
                         }
                         else {
-                            if(Anime1CommentSatus==1){
-                                window.open(Anime1Url);
-
+                            if(Anime1CommentEnable&&title!=null&&EpisodeCurrent!=null){
+                                Anime1Comment();
                             }
-                            else{
-                                abp.createPopup('[Error] anime1.me search failed, "!comment" unavailable.', 2000);
+                            else if(!Anime1CommentEnable){
+                                abp.createPopup('[Error] Function disabled.', 2000);
+                            }
+                            else if(title==null||EpisodeCurrent==null){
+                                abp.createPopup('[Error] Title or Episode unkown.', 2000);
                             }
 
                         }
                     }
                         break;
                     case "music": {
-                        var DanmakuLink=GM_getValue('DanmakuLink');
-                        var title=DanmakuLink.match(/\[(.*)\] \[(.*)\] \[(.*)\]/)[2];
                         window.open("https://music.163.com/#/search/m/?s="+encodeURIComponent(title));
                     }
                         break;
                     case "wiki": {
-                        var DanmakuLink=GM_getValue('DanmakuLink');
-                        var title=DanmakuLink.match(/\[(.*)\] \[(.*)\] \[(.*)\]/)[2];
                         window.open("https://zh.wikipedia.org/wiki/"+encodeURIComponent(title));
                     }
                         break;
@@ -2568,9 +2550,6 @@ function InputLisener(k) {
                     }
                         break;
                     case "pixiv": {
-                        var DanmakuLink=GM_getValue('DanmakuLink');
-                        var title=DanmakuLink.match(/\[(.*)\] \[(.*)\] \[(.*)\]/)[2];
-
                         var jtitle=CheckAlias('Japanese Title',title);
                         if(jtitle!=title){
                             pixiv();
