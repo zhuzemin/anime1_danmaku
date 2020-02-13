@@ -18,7 +18,7 @@
 // @include     https://www.tucao.one/play/*
 // @include     https://www.acfun.cn/bangumi/*
 // @include     https://www.acfun.cn/v/*
-// @version     4.1
+// @version     4.11
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -103,6 +103,7 @@ class ObjectRequest{
 }
 var currentSite=getLocation(window.location.href).hostname;;
 var messages=[
+    ["[Notice] My userscript for adult site: !adult",5000,5],
     ["[Update] v4.1: now all function working on anime1.me",5000,2],
     ["[Notice] Danmaku source page: !source",5000,2],
     ["[Notice] a secret command for who rating this userscript: !secret",5000,5],
@@ -2554,6 +2555,10 @@ function InputLisener(k) {
                             var danmakuSite=DanmakuLink.match(/\[(.*)\] \[(.*)\] \[(.*)\]/)[1].toLowerCase();
                         danmakuSource=GM_getValue('danmakuSource');
                             window.open(danmakuSource[danmakuSite]);
+                    }
+                        break;
+                    case "adult": {
+                        window.open("https://sleazyfork.org/en/scripts?q=zhuzemin");
                     }
                         break;
                 }
