@@ -904,6 +904,13 @@ function isMobile(){var e,t=!1;return e=navigator.userAgent||navigator.vendor||w
 //entry
 function init(){
     debug("init");
+    if(!window.location.href.includes("v.anime1.me")&&!window.location.href.includes("i.animeone.me")){
+        //in here clear value , because maybe need open frame in tab
+        GM_setValue("DanmakuLink", null);
+        GM_setValue("DanmakuLinkTucao", null);
+        GM_setValue("danmakuSource", null);
+
+    }
     if(window.location.href.includes("bilibili.com")){
         DisplayInput('');
         CreateButton('Detect cid',function () {
@@ -954,9 +961,6 @@ function init(){
         });
     }
     else if(window.location.href.match(/^https:\/\/anime1\.me\/\d*$/)){
-            //in here clear value , because maybe need open frame in tab
-            GM_setValue("DanmakuLink", null);
-            GM_setValue("DanmakuLinkTucao", null);
             DisplayInput(InputPlaceholder);
 
             /*CreateButton('Search in bilibili',function () {
@@ -1055,6 +1059,7 @@ function init(){
                     TucaoStatus=3;
                 }
                 GetDanmaku(eyny);
+                GM_setValue("DanmakuLink", input.value);
                 btn.innerHTML='Player loading...';
                 var CheckValue=setInterval(function () {
                     if(abp!=null){
@@ -1116,6 +1121,7 @@ function init(){
                     TucaoStatus=3;
                 }
                 GetDanmaku(TucaoAlternate);
+                GM_setValue("DanmakuLink", input.value);
                 btn.innerHTML='Player loading...';
                 var CheckValue=setInterval(function () {
                     if(abp!=null){
@@ -1446,7 +1452,7 @@ function acfun(){
 function Anime1Comment(){
     var DanmakuLink=GM_getValue('DanmakuLink');
     var title=DanmakuLink.match(/\[(.*)\] \[(.*)\] \[(.*)\]/)[2];
-    var title=CheckAlias('anime1.me',title);
+    title=CheckAlias('anime1.me',title);
     var href="https://anime1.me/?s="+encodeURIComponent(simplized(title,'s2t')+" "+pad(EpisodeCurrent,2));
     var search=new ObjectRequest(href);
     var SearchResult;
@@ -1509,16 +1515,15 @@ function RatingCheck(){
 
 function GetJaTitle(func=null,title){
     var DanmakuLink=GM_getValue('DanmakuLink');
-    var _title=DanmakuLink.match(/\[(.*)\] \[(.*)\] \[(.*)\]/)[2];
+    var title=DanmakuLink.match(/\[(.*)\] \[(.*)\] \[(.*)\]/)[2];
 
-    var href="https://zh.wikipedia.org/wiki/"+encodeURIComponent(_title);
+    var href="http://zh.wikipedia.org/w/api.php?action=query&prop=langlinks&format=json&titles="+encodeURIComponent(simplized(title));
     var search=new ObjectRequest(href);
     var SearchResult;
     request(search,function (responseDetails) {
-        var responseText=responseDetails.responseText;
-        var dom = new DOMParser().parseFromString(responseText, "text/html");
-        var result=dom.querySelector('span[lang=ja]');
-        if(result==null){
+        var result=JSON.parse(responseDetails.responseText);
+        debug(Object.keys(result.query.pages)[0]);
+        if(Object.keys(result.query.pages)[0]=='-1'){
             if(PushEnable){
                 abp.createPopup('[Error] Get Japanese Title failed.',5000);
 
@@ -1537,12 +1542,21 @@ function GetJaTitle(func=null,title){
             if(AliasSetting[site]==undefined){
                 AliasSetting[site]={};
             }
-                AliasSetting[site][_title] = result.textContent;
-                GM_setValue('AliasSetting',JSON.stringify(AliasSetting));
-                abp.createPopup("Alias saved.", 2000);
-                if(func!=null){
-                    func();
+            debug(Object.values(result.query.pages)[0]);
+                var langlinks=Object.values(result.query.pages)[0].langlinks;
+                for(var obj of langlinks){
+                    if(obj.lang=='ja'){
+                        debug(obj['*']);
+                        var jtitle=obj['*'];
+                        AliasSetting[site][title] = jtitle;
+                        GM_setValue('AliasSetting',JSON.stringify(AliasSetting));
+                        abp.createPopup("Alias saved.", 2000);
+                        if(func!=null){
+                            func();
 
+                        }
+                        break;
+                    }
                 }
         }
     });
@@ -1551,7 +1565,7 @@ function GetJaTitle(func=null,title){
 function pixiv(){
     var DanmakuLink=GM_getValue('DanmakuLink');
     var title=DanmakuLink.match(/\[(.*)\] \[(.*)\] \[(.*)\]/)[2];
-    var title=CheckAlias('Japanese Title',title);
+    title=CheckAlias('Japanese Title',title);
     window.open("https://www.pixiv.net/en/tags/"+encodeURIComponent(title)+"/artworks?s_mode=s_tag");
 }
 
@@ -1859,6 +1873,22 @@ function request(object,func) {
         },
         ononerror: function (responseDetails) {
             debug(responseDetails);
+            // retry
+            if (retries--) {          // *** Recurse if we still have retries
+                setTimeout(request,2000);
+                return;
+            }
+            //Dowork
+            func(responseDetails,object.other);
+
+        },
+        onabort: function (responseDetails) {
+            debug(responseDetails);
+            // retry
+            if (retries--) {          // *** Recurse if we still have retries
+                setTimeout(request,2000);
+                return;
+            }
             //Dowork
             func(responseDetails,object.other);
 
@@ -2435,13 +2465,14 @@ function InputLisener(k) {
                     }
                         break;
                     case "disqus":
+                    case "anime1":
                     case "comment": {
                         if(window.location.href.includes("anime1.me")){
                             abp.createPopup('[Error] you already in anime1.me', 2000);
 
                         }
                         else {
-                            if(Anime1CommentSatus!=0){
+                            if(Anime1CommentSatus==1){
                                 window.open(Anime1Url);
 
                             }
@@ -2551,10 +2582,17 @@ function InputLisener(k) {
                     }
                         break;
                     case "source": {
-                        var DanmakuLink=GM_getValue('DanmakuLink');
-                            var danmakuSite=DanmakuLink.match(/\[(.*)\] \[(.*)\] \[(.*)\]/)[1].toLowerCase();
                         danmakuSource=GM_getValue('danmakuSource');
+                        if(danmakuSource!=null){
+                            var DanmakuLink=GM_getValue('DanmakuLink');
+                            var danmakuSite=DanmakuLink.match(/\[(.*)\] \[(.*)\] \[(.*)\]/)[1].toLowerCase();
                             window.open(danmakuSource[danmakuSite]);
+
+                        }
+                        else{
+                            abp.createPopup('[Error] Not Search Danmaku, "!source" unavailable.', 2000);
+                        }
+
                     }
                         break;
                     case "adult": {
