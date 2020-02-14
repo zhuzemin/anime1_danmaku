@@ -39,7 +39,7 @@ Notice:
 	https://ani.gamer.com.tw/animeVideo.php?sn=******
 *but because script doesn't know title, so other function will be unavailable.
 but if input like "Search Result" format:
-	[成群逐队！西顿学园] [第4话] - http://danmu.aixifan.com/V2/11290983?pageSize=500&pageNo=1
+	[Acfun] [成群逐队！西顿学园] [第4话] - http://danmu.aixifan.com/V2/11290983?pageSize=500&pageNo=1
 all function will be available.
 
 

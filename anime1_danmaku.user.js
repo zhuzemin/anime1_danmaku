@@ -1011,7 +1011,7 @@ function init(){
             if(ret){
                 clearInterval(CheckValue);
             }
-        },5000);
+        },2000);
     }
     else if(window.location.href.includes("v.anime1.me")){
         var CheckValue=setInterval(function () {
@@ -1019,7 +1019,7 @@ function init(){
             if(ret){
                 clearInterval(CheckValue);
             }
-        },5000);
+        },2000);
     }
     else if(window.location.href.includes("video.eyny.com")) {
         DisplayInput(InputPlaceholderSearch);
