@@ -18,7 +18,7 @@
 // @include     https://www.tucao.one/play/*
 // @include     https://www.acfun.cn/bangumi/*
 // @include     https://www.acfun.cn/v/*
-// @version     4.13
+// @version     4.14
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -53,15 +53,14 @@ var defaultAlias={
 }
 //push message
 var messages=[
-    ["[Notice] search Anime in pixiv: !pixiv",5000,2],
-    ["[Update] v4.1: now all function working on anime1.me",5000,2],
+    ["[Notice] Search in pixiv: !pixiv",5000,2],
     ["[Notice] Danmaku source page: !source",5000,2],
-    ["[Notice] a secret command for who rating this userscript: !secret",5000,5],
-    ["[Notice] Post Danmaku: !dm:******",5000,2],
+    ["[Notice] A secret command for who rating this userscript: !secret",5000,5],
+    ["[Notice] Post danmaku: !dm:******",5000,2],
     ["[Notice] Danmaku speed(100-200): !dmspd:***",5000,2],
-    ["[Notice] search Anime theme song: !music",5000,2],
-    ["[Notice] Current Anime wiki: !wiki",5000,2],
-    ["[Notice] Current Anime in anime1.me page: !anime1",5000,2],
+    ["[Notice] Search theme song: !music",5000,2],
+    ["[Notice] anime wiki: !wiki",5000,2],
+    ["[Notice] anime in anime1.me page: !anime1",5000,2],
     ["[Notice] Set alias: !alias:{{targetSite}}targetTitle",5000,2],
     ["[Notice] Home page: !fork",5000,2],
     ["[Notice] Feedback: QQ Group: 32835999",5000,5]
@@ -120,7 +119,7 @@ class ObjectRequest{
 setUserPref(
     'DanmakuSpeed',
     '150',
-    'Set Danmaku speed',
+    'Set danmaku speed',
     `Enter percentage of speed for Danmaku, (100-200%), more larger more slower, default: 150.`,
     ','
 );
@@ -1547,7 +1546,7 @@ function GetJaTitle(func=null,title){
         debug(Object.keys(result.query.pages)[0]);
         if(Object.keys(result.query.pages)[0]=='-1'){
             if(PushEnable){
-                abp.createPopup('[Error] Get Japanese Title failed.',5000);
+                abp.createPopup('[Error] Get japanese title failed.',5000);
 
             }
         }
@@ -1942,7 +1941,7 @@ function setUserPref(varName, defaultVal, menuText, promtText, sep){
 
 //core
 function DanmakuPost(comment){
-    var cid=GM_getValue("DanmakuLinkTucao").match(matching)[1];
+    var cid=GM_getValue("DanmakuLinkTucao").match(/https:\/\/www\.tucao\.one\/index\.php\?m=mukio&c=index&a=init&playerID=(\d*-\d*-\d*-\d*)/)[1];
     debug(cid);
     var url="https://www.tucao.one/index.php?m=mukio&c=index&a=post&playerID="+cid;
     var object=new ObjectRequest(url);
@@ -2316,10 +2315,6 @@ function GetDanmaku(func) {
                 }
             }
             else {
-                debug('here');
-                if (TucaoEnable) {
-                    messages.push(['[Error] tucao.one search failed, "!dm" unavailable.', 5000, null]);
-                }
                 func(comments);
             }
         });
@@ -2364,7 +2359,7 @@ function InputLisener(k) {
                     case "dm":
                     case "danmaku": {
                         if (commandPrompts.length < 1) {
-                            abp.createPopup("Post Danmaku: !dm:****** || !dm:******{{type,size,color}}", 2000);
+                            abp.createPopup("Post Danmaku: !dm:****** || !dm:******{{mode,size,color}}", 2000);
                         } else {
                             var DanmakuLinkTucao=GM_getValue('DanmakuLinkTucao');
                             if (DanmakuLinkTucao!=undefined||null||'') {
@@ -2372,35 +2367,35 @@ function InputLisener(k) {
                                 var size = 25;
                                 var text = commandPrompts[0];
                                 var color = getRandomColor();
-                                var params = commandPrompts[0].match(/\{\{(\w{3},\d{2},\w*)\}\}/);
+                                var params = commandPrompts[0].match(/\{\{([\w\d]*,[\w\d]*,[\w\d]*)\}\}/);
                                 if (params != null) {
                                     text = commandPrompts[0].replace(params[0], '');
-                                    params = params[1].split(',');
+                                    params = params[1].toLowerCase().split(',');
                                     if (params.length == 3) {
                                         mode = params[0];
                                         size = params[1];
                                         color = params[2];
                                         if (!['12', '16', '18', "25", "36", "45", "64"].includes(size)) {
-                                            abp.createPopup("[Error] size wrong.", 2000);
+                                            abp.createPopup('[Error] "size" not available.', 2000);
 
                                         }
-                                        if (["L2R", "R2L", "btm", "top"].includes(mode)) {
-                                            if (mode.toLowerCase() == "r2l") {
+                                        if ([ "rot", "btm", "top"].includes(mode)) {
+                                            if (mode == "rot") {
                                                 mode = 1;
                                             }
-                                            else if (mode.toLowerCase() == "btm") {
+                                            else if (mode == "btm") {
                                                 mode = 4;
                                             }
-                                            else if (mode.toLowerCase() == "top") {
+                                            else if (mode == "top") {
                                                 mode = 5;
                                             }
-                                            else if (mode.toLowerCase() == "l2r") {
+                                            else if (mode == "l2r") {
                                                 mode = 6;
                                             }
 
                                         }
                                         else {
-                                            abp.createPopup("[Error] type wrong.", 2000);
+                                            abp.createPopup('[Error] "mode" unavailable.', 2000);
 
                                         }
                                         if (["black", "blue", "green", "orange", "pink", "purple", "red", "silver", "yellow", "white", "gold"].includes(color)) {
@@ -2444,13 +2439,13 @@ function InputLisener(k) {
                                             color = parseInt(color.match(/#([\d\w]{6})/)[1], 16);
                                         }
                                         else {
-                                            abp.createPopup("[Error] parsed wrong color", 2000);
+                                            abp.createPopup('[Error] "color" unavailable', 2000);
 
                                         }
 
                                     }
                                     else {
-                                        abp.createPopup("[Error] wrong format. {{type,size,color}}.", 2000);
+                                        abp.createPopup('[Error] "format" unavailable. {{mode,size,color}}.', 2000);
                                     }
 
                                 }
@@ -2486,7 +2481,7 @@ function InputLisener(k) {
                                 Anime1Comment();
                             }
                             else{
-                                abp.createPopup('[Error] Title or Episode unkown.', 2000);
+                                abp.createPopup('[Error] "Title" or "Episode" unkown.', 2000);
                             }
 
                         }
@@ -2541,7 +2536,7 @@ function InputLisener(k) {
 
                                         }
                                         else {
-                                            abp.createPopup("[Error] currentTitle not parsed.", 2000);
+                                            abp.createPopup('[Error] "currentTitle" not parsed.', 2000);
 
                                         }
                                         
@@ -2549,12 +2544,12 @@ function InputLisener(k) {
                                         abp.createPopup("Alias saved.", 2000);
                                     }
                                     else{
-                                        abp.createPopup("[Error] parsed wrong site. [acfun|bilibili|tucao|bahamut|anime1]", 5000);
+                                        abp.createPopup('[Error] "site" unavailable. [acfun|bilibili|tucao|bahamut|anime1]', 5000);
 
                                     }
                                 }
                                 else{
-                                    abp.createPopup("[Error] Wrong format. {{targetSite}}targetTitle || {{targetSite,currentTitle}}targetTitle ", 5000);
+                                    abp.createPopup('[Error] "format" unavailable. {{targetSite}}targetTitle || {{targetSite,currentTitle}}targetTitle ', 5000);
 
 
                                 }
@@ -2587,7 +2582,7 @@ function InputLisener(k) {
 
                         }
                         else{
-                            abp.createPopup('[Error] Not Search Danmaku, "!source" unavailable.', 2000);
+                            abp.createPopup('[Error] Not using "Search Danmaku", "!source" unavailable.', 2000);
                         }
 
                     }

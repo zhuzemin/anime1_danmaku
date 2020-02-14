@@ -4,36 +4,38 @@ Compatibility:
 Firefox/Chrome,
 Greasemonkey/Tampermonkey
 
-This script display and post Danmaku in "anime1.me" / "video.eyny.com" / "www.tucao.one", 
-Danmaku from "bilibili.com" / "ani.gamer.com.tw" / "acfun.cn".
+This script display and post danmaku in "anime1.me" / "video.eyny.com" / "www.tucao.one", 
+danmaku from "bilibili.com" / "ani.gamer.com.tw" / "acfun.cn".
 
 Usage:
-1: Click Button "Search Danmaku", 
-2: Wait for Search complete, 
-3: Click Button "Load Player", 
+1: Click button "Search Danmaku", 
+2: Wait for search complete, 
+3: Click button "Load Player", 
 4: Enjoy anime.
 
 
-Other function:
-5: Download Danmaku: After "Load Player", "Download Danmaku" Button will be ready, it's use for download Danmaku as ".ass" file. 
+Other command:
+(*Command type in text input inside player)
+5: Download danmaku: after "Load Player", "Download Danmaku" button will be ready, it's use for download danmaku as ".ass" file. 
 6: Volume adjust: ¡ü¡ý(arrow key).
-7: Danmaku speed adjust(temporally): use command: "!dmspd:***", 
-*Type it in Input inside Player, "***" mean percentage of speed for Danmaku, (100-200%), more larger more slower, default: 150.
-8: Post Danmaku: "!dm:******", 
-*Specify Danmaku type/size/color: "!dm:******{{type,size,color}}", 
-*Type: L2R/R2L/btm/top, Size: 12/16/18/25/36/45/64, Color: black/blue/green/orange/pink/purple/red/silver/yellow/white/gold.
-9: Current Anime on anime1.me page: !anime1
+7: Danmaku speed adjust(100-200%): !dmspd:*** 
+8: Post danmaku: !dm:******
+9: Post danmaku with specify mode/size/color: !dm:******{{mode,size,color}}
+*Mode: rot/btm/top
+*Size: 12/16/18/25/36/45/64
+*Color: black/blue/green/orange/pink/purple/red/silver/yellow/white/gold
+9: Current anime on anime1.me page: !anime1
 10: Open this userscript greasyfork page: !fork
-11: Open current Anime wiki page: !wiki
-12: Search current Anime theme song: !music
+11: Open current anime wiki page: !wiki
+12: Search current anime theme song: !music
 13: Danmaku source page: !source
-14: search Anime in pixiv: !pixiv
+14: Search anime in pixiv: !pixiv
 
 
 Notice:
-*Post Danmaku work base "www.tucao.one", Danmaku from "tucao.one" will add mark "[www.tucao.one]".
+*Post Danmaku work base "www.tucao.one", danmaku from "tucao.one" will add mark "[www.tucao.one]".
 *Double click Input will show all search result, you can select one to display(or download).
-*you can don't use "Search Danmaku", instead paste "url" in Input, then will directly Load Player.
+*you can don't use "Search Danmaku", instead paste "url" in Input, then will directly load player.
 "url" like:
 	https://api.bilibili.com/x/v1/dm/list.so?oid=******,
 	https://ani.gamer.com.tw/animeVideo.php?sn=******
@@ -53,7 +55,6 @@ then next time you watching "¸èÎè¼¿î®ÏÄÂå¿Ë", the script will try search '¸èÎè¼¿
 14: use !alias when not use "Search Danmaku": !alias:{{targetSite,currentTitle}}targetTitle
 15: Show all stored alias: !alias
 16: Clear all alias: !alias:null
-*I planning store some alias in script, if you can help me, will be grateful!
 
 
 Secret command:
@@ -67,9 +68,9 @@ QQ Group: 32835999
 
 Thanks:
 1.Danmaku Player: "ABPlayer" ---- https://github.com/jabbany/ABPlayerHTML5
-tiny modified: load Danmaku not from url, instead read from string.(*for CROS)
+*I made tiny modified: load Danmaku not from url, instead read from string.(*for CROS)
 2.Danmaku download: "Ass Danmaku" ---- https://github.com/tiansh/ass-danmaku
-base early userscript version, make it support new site.
+*I modified early userscript version, make it support new site.
 
 
 
