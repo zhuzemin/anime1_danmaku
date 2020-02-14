@@ -18,7 +18,7 @@
 // @include     https://www.tucao.one/play/*
 // @include     https://www.acfun.cn/bangumi/*
 // @include     https://www.acfun.cn/v/*
-// @version     4.11
+// @version     4.12
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -47,9 +47,12 @@ var debug = cfg.debug ? console.log.bind(console)  : function () {
 //user setting
 var TucaoEnable=true;
 var PushEnable=true;
-var Anime1CommentEnable=true;
 var TucaoDelay=5;
-
+var defaultAlias={
+    bahamut:{
+        '异种族风俗娘评鉴指南':'異種族風俗娘評鑑指南 無修正版'
+    }
+}
 // prepare UserPrefs
 setUserPref(
     'DanmakuSpeed',
@@ -1665,6 +1668,7 @@ function SearchBilibili() {
 }
 
 function CheckAlias(site,title) {
+    title=simplized(title);
     var alias=title;
     var aliasList=GM_getValue('AliasSetting')||null;
     if(aliasList!=null){
@@ -2092,14 +2096,7 @@ function ABP_Init(object){
         //trigger message push function
         if(PushEnable){
             var CheckValue=setInterval(function () {
-                if(
-                    ((TucaoEnable&&TucaoStatus!=0))
-                    ||
-                    ((TucaoEnable&&TucaoStatus!=0))
-                    ||
-                    (!(TucaoEnable&&TucaoStatus!=0))
-
-                ){
+                if((TucaoEnable&&TucaoStatus!=0)||!TucaoEnable){
                     MessagePush(messages);
                     clearInterval(CheckValue);
                 }
@@ -2456,13 +2453,10 @@ function InputLisener(k) {
 
                         }
                         else {
-                            if(Anime1CommentEnable&&title!=null&&EpisodeCurrent!=null){
+                            if(title!=null&&EpisodeCurrent!=null){
                                 Anime1Comment();
                             }
-                            else if(!Anime1CommentEnable){
-                                abp.createPopup('[Error] Function disabled.', 2000);
-                            }
-                            else if(title==null||EpisodeCurrent==null){
+                            else{
                                 abp.createPopup('[Error] Title or Episode unkown.', 2000);
                             }
 
@@ -2515,6 +2509,7 @@ function InputLisener(k) {
                                         }
                                         debug('title: '+title);
                                         if(title!=null){
+                                            title=simplized(title);
                                             AliasSetting[site][title]=alias;
                                             if(AliasSetting[currentSite]==undefined){
                                                 AliasSetting[currentSite]={};
