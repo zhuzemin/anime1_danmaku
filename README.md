@@ -27,6 +27,8 @@ Other function:
 11: Open current Anime wiki page: !wiki
 12: Search current Anime theme song: !music
 13: Danmaku source page: !source
+14: search Anime in pixiv: !pixiv
+
 
 Notice:
 *Post Danmaku work base "www.tucao.one", Danmaku from "tucao.one" will add mark "[www.tucao.one]".

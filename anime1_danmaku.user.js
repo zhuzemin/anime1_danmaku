@@ -104,15 +104,15 @@ class ObjectRequest{
 }
 var currentSite=getLocation(window.location.href).hostname;;
 var messages=[
-    ["[Notice] My userscript for adult site: !adult",5000,5],
+    ["[Notice] search Anime in pixiv: !pixiv",5000,2],
     ["[Update] v4.1: now all function working on anime1.me",5000,2],
     ["[Notice] Danmaku source page: !source",5000,2],
     ["[Notice] a secret command for who rating this userscript: !secret",5000,5],
     ["[Notice] Post Danmaku: !dm:******",5000,2],
     ["[Notice] Danmaku speed(100-200): !dmspd:***",5000,2],
-    ["[Notice] Current Anime theme song: !music",5000,2],
+    ["[Notice] search Anime theme song: !music",5000,2],
     ["[Notice] Current Anime wiki: !wiki",5000,2],
-    ["[Notice] Current Anime on anime1.me page: !anime1",5000,2],
+    ["[Notice] Current Anime in anime1.me page: !anime1",5000,2],
     ["[Notice] Set alias: !alias:{{targetSite}}targetTitle",5000,2],
     ["[Notice] Home page: !fork",5000,2],
     ["[Notice] Feedback: QQ Group: 32835999",5000,5]
@@ -1492,7 +1492,7 @@ function RatingCheck(){
             var ratingUser=dom.querySelector('#feedback-favoriters').nextElementSibling.textContent;
             if(ratingUser.includes(username)){
                 if(PushEnable){
-                    abp.createPopup('[Notice] Thanks for you rating! the secret command is: !pixiv',5000);
+                    abp.createPopup('[Notice] Thanks for you rating! the secret command is: !adult',5000);
                 }
 
             }
