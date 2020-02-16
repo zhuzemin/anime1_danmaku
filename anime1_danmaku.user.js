@@ -18,7 +18,7 @@
 // @include     https://www.tucao.one/play/*
 // @include     https://www.acfun.cn/bangumi/*
 // @include     https://www.acfun.cn/v/*
-// @version     4.14
+// @version     4.15
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -1253,6 +1253,12 @@ function bahamut(){
         input.setAttribute("list", "result");
     }
     request(search,function (responseDetails) {
+        if(responseDetails.status!=200){
+            SearchResult ="Search Result: [Bahamut] Failed.";
+            InsertOption( SearchResult);
+            bilibili();
+            return;
+        }
         var responseText=responseDetails.responseText;
         var dom = new DOMParser().parseFromString(responseText, "text/html");
         var anime_list=dom.querySelector("ul.anime_list");
@@ -1287,7 +1293,7 @@ function bahamut(){
                         //debug("episode: "+parseInt(episode.innerText)+"; EpisodeCurrent: "+parseInt(EpisodeCurrent));
                         if (parseInt(episode.innerText.match(/(\d{1,4})/)[1]) == parseInt(EpisodeCurrent)) {
                             href = episode.firstChild.href;
-                            href = href.replace(/https?:\/\/.*\/(\?sn=\d*)$/, function(match, $1, $2, offset, original){ return 'https://ani.gamer.com.tw/animeVideo.php'+$1;})
+                            href = href.replace(/https?:\/\/.*(\?sn=\d*)$/, function(match, $1, $2, offset, original){ return 'https://ani.gamer.com.tw/animeVideo.php'+$1;})
                             debug(href);
                             SearchResult = "Search Result: [Bahamut] [" + SearchResultTitle + "] ["+episode.innerText + "] - " + href;
                         }
@@ -1306,6 +1312,12 @@ function bilibili() {
     var search=new ObjectRequest(href);
     var SearchResult;
     request(search,function (responseDetails) {
+        if(responseDetails.status!=200){
+            SearchResult ="Search Result: [Bilibili] Failed."
+            InsertOption( SearchResult);
+            TucaoSearch();
+            return;
+        }
         var responseText=responseDetails.responseText;
         var dom = new DOMParser().parseFromString(responseText, "text/html");
         var bangumi_items=dom.querySelectorAll("li.bangumi-item");
@@ -1383,6 +1395,17 @@ function TucaoSearch() {
         var search = new ObjectRequest(href);
         var SearchResult;
         request(search, function (responseDetails) {
+            if(responseDetails.status!=200){
+                SearchResult = "Search Result: [Tucao] Failed."
+                InsertOption(SearchResult);
+                acfun();
+                if (PushEnable) {
+                    messages.push(['[Error] tucao.one search failed, "!dm" unavailable.', 5000, null]);
+
+                }
+                TucaoStatus = 2;
+                return;
+            }
             var responseText = responseDetails.responseText;
             var dom = new DOMParser().parseFromString(responseText, "text/html");
             var search_list = dom.querySelector("div.search_list");
@@ -1436,6 +1459,13 @@ function acfun(){
     var SearchResult;
 
     request(search,function (responseDetails) {
+        if(responseDetails.status!=200){
+
+            SearchResult ="Search Result: [Acfun] Failed."
+            InsertDropDown();
+            InsertOption( SearchResult);
+            return;
+        }
         var responseText=responseDetails.responseText;
         var json=JSON.parse(responseText);
         if(json.bgmList==undefined){
@@ -1862,7 +1892,6 @@ function pad(num, n) {
 
 function request(object,func) {
     debug('requestUrl: '+object.url)
-    var retries = 3;
     GM_xmlhttpRequest({
         method: object.method,
         url: object.url,
@@ -1873,45 +1902,23 @@ function request(object,func) {
         //synchronous: true
         onload: function (responseDetails) {
             debug(responseDetails);
-            if (responseDetails.status != 200&&responseDetails.status != 302) {
-                // retry
-                if (retries--) {          // *** Recurse if we still have retries
-                    setTimeout(request,2000);
-                    return;
-                }
-            }
             //Dowork
             func(responseDetails,object.other);
         },
         ontimeout: function (responseDetails) {
             debug(responseDetails);
-            // retry
-            if (retries--) {          // *** Recurse if we still have retries
-                setTimeout(request,2000);
-                return;
-            }
             //Dowork
             func(responseDetails,object.other);
 
         },
         ononerror: function (responseDetails) {
             debug(responseDetails);
-            // retry
-            if (retries--) {          // *** Recurse if we still have retries
-                setTimeout(request,2000);
-                return;
-            }
             //Dowork
             func(responseDetails,object.other);
 
         },
         onabort: function (responseDetails) {
             debug(responseDetails);
-            // retry
-            if (retries--) {          // *** Recurse if we still have retries
-                setTimeout(request,2000);
-                return;
-            }
             //Dowork
             func(responseDetails,object.other);
 
