@@ -18,7 +18,7 @@
 // @include     https://www.tucao.one/play/*
 // @include     https://www.acfun.cn/bangumi/*
 // @include     https://www.acfun.cn/v/*
-// @version     4.16
+// @version     4.17
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -1728,7 +1728,7 @@ function CheckAlias(site,title) {
     var alias=title;
     var aliasList=GM_getValue('AliasSetting')||{};
     if(aliasList!=undefined){
-        aliasList=Object.assign(defaultAlias,JSON.parse(aliasList));
+        aliasList=Object.assign(defaultAlias,aliasList);
         if (aliasList[site]!=undefined){
             if(aliasList[site][title]!=undefined){
                 alias=aliasList[site][title];
