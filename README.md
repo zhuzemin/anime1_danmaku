@@ -33,7 +33,7 @@ Other command:
 
 
 Notice:
-*Post Danmaku work base "www.tucao.one", danmaku from "tucao.one" will add mark "[www.tucao.one]".
+*Post Danmaku work base "www.tucao.one", danmaku from "tucao.one" will add mark "[tucao]".
 *Double click Input will show all search result, you can select one to display(or download).
 *you can don't use "Search Danmaku", instead paste "url" in Input, then will directly load player.
 "url" like:

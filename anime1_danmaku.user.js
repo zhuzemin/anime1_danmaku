@@ -18,7 +18,7 @@
 // @include     https://www.tucao.one/play/*
 // @include     https://www.acfun.cn/bangumi/*
 // @include     https://www.acfun.cn/v/*
-// @version     4.15
+// @version     4.16
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -887,12 +887,10 @@ var initButton = (function () {
             debug('cid = %o', cid);
             if (!cid || done) return;
             else done = true;
-            fetchDanmaku(cid, function (danmaku) {
                 CreateButton("Download Danmaku",function () {
                     mina(cid);
 
                 });
-            });
         });
     };
 }());
@@ -2278,20 +2276,12 @@ function GetDanmaku(func) {
                 }
                 comments= (new XMLSerializer()).serializeToString(xmlDoc );
             }
+            var DanmakuLinkTucao=GM_getValue("DanmakuLinkTucao")||null;
+            debug('DanmakuLinkTucao: '+DanmakuLinkTucao);
 
             //trigger insert tucao.one danmaku(and enable danmaku post function)
-            if(TucaoEnable&&title!=null&&EpisodeCurrent!=null&&TucaoStatus==1){
-                var DanmakuLink;
-                try{
-                    DanmakuLink=GM_getValue("DanmakuLinkTucao");
-                }
-                catch(e){
-                    debug("OtherInsertTucao Error: "+ e);
-                }
-                debug('DanmakuLink: '+DanmakuLink);
-                //this condition for anime1
-                if(matching.test(DanmakuLink)) {
-                    var danmaku=new ObjectRequest(DanmakuLink);
+            if(TucaoEnable&&DanmakuLinkTucao!=null){
+                    var danmaku=new ObjectRequest(DanmakuLinkTucao);
                     request(danmaku,function (responseDetails) {
                         var responseText = responseDetails.responseText;
                         var tucaoComments = responseText;
@@ -2319,7 +2309,6 @@ function GetDanmaku(func) {
                         func(comments);
                     });
                     return;
-                }
             }
             else {
                 func(comments);
@@ -2606,10 +2595,13 @@ function InputLisener(k) {
 
 function OtherInsertTucao(tucaoDanmaku,mainDanmaku){
     debug("OtherInsertTucao");
-    var tucaoDanmaku=tucaoDanmaku.replace('</i>','')
-        .replace('<?xml version="1.0" encoding="utf-8"?>','')
-    .replace(/(<d p='[\.\d,]*'>)(.*<\/d>)/g,
-        function(match, $1, $2, offset, original){ return $1+"[www.tucao.one]"+$2;});
+    var tucaoDanmaku=tucaoDanmaku
+        .replace('</i>','')
+        .replace(/<\?xml version="1\.0" encoding="(utf|UTF)-8"\?>/,'')
+        .replace(/(<d p='|"[\.\d,]*'|">)(.*<\/d>)/g,
+            function(match, $1, $2, offset, original){ return $1+"[tucao]"+$2;});
+    debug(tucaoDanmaku);
+    debug(mainDanmaku.replace('<i>',tucaoDanmaku));
     return mainDanmaku.replace('<i>',tucaoDanmaku);
 }
 
