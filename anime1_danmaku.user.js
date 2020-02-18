@@ -18,7 +18,7 @@
 // @include     https://www.tucao.one/play/*
 // @include     https://www.acfun.cn/bangumi/*
 // @include     https://www.acfun.cn/v/*
-// @version     4.17
+// @version     4.18
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -70,7 +70,7 @@ var messages=[
 
 //global variate
 var cfg = {
-    'debug': false
+    'debug': true
 }
 var debug = cfg.debug ? console.log.bind(console)  : function () {
 };
@@ -1761,6 +1761,8 @@ function siteMapping(url) {
 }
 
 
+
+
 //utils
 function getRandomColor() {
     var Colors = {};
@@ -2119,6 +2121,76 @@ function ABP_Init(object){
             ABP_Video.addEventListener("mousemove",mousemove);
 
         });
+
+        //danmaku setting --start--
+        var ABP_Text_Input=ABP_Text.querySelector('input');
+        //insert danmaku setting ui
+        dmSetIconBtnHtml=`
+            <button data-balloon="Setting" data-balloon-pos="up" class="dplayer-icon dplayer-comment-setting-icon" style="height:30px;z-index:100;"><span class="dplayer-icon-content"><svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" version="1.1" viewBox="0 0 32 32"><path class="dplayer-fill" style="fill:#666;" d="M19.357 2.88c1.749 0 3.366 0.316 4.851 0.946 1.485 0.632 2.768 1.474 3.845 2.533s1.922 2.279 2.532 3.661c0.611 1.383 0.915 2.829 0.915 4.334 0 1.425-0.304 2.847-0.915 4.271-0.611 1.425-1.587 2.767-2.928 4.028-0.855 0.813-1.811 1.607-2.869 2.38s-2.136 1.465-3.233 2.075c-1.099 0.61-2.198 1.098-3.296 1.465-1.098 0.366-2.115 0.549-3.051 0.549-1.343 0-2.441-0.438-3.296-1.311-0.854-0.876-1.281-2.41-1.281-4.608 0-0.366 0.020-0.773 0.060-1.221s0.062-0.895 0.062-1.343c0-0.773-0.183-1.353-0.55-1.738-0.366-0.387-0.793-0.58-1.281-0.58-0.652 0-1.21 0.295-1.678 0.886s-0.926 1.23-1.373 1.921c-0.447 0.693-0.905 1.334-1.372 1.923s-1.028 0.886-1.679 0.886c-0.529 0-1.048-0.427-1.556-1.282s-0.763-2.259-0.763-4.212c0-2.197 0.529-4.241 1.587-6.133s2.462-3.529 4.21-4.912c1.75-1.383 3.762-2.471 6.041-3.264 2.277-0.796 4.617-1.212 7.018-1.253zM7.334 15.817c0.569 0 1.047-0.204 1.434-0.611s0.579-0.875 0.579-1.404c0-0.569-0.193-1.047-0.579-1.434s-0.864-0.579-1.434-0.579c-0.529 0-0.987 0.193-1.373 0.579s-0.58 0.864-0.58 1.434c0 0.53 0.194 0.998 0.58 1.404 0.388 0.407 0.845 0.611 1.373 0.611zM12.216 11.79c0.691 0 1.292-0.254 1.8-0.763s0.762-1.107 0.762-1.8c0-0.732-0.255-1.343-0.762-1.831-0.509-0.489-1.109-0.732-1.8-0.732-0.732 0-1.342 0.244-1.831 0.732-0.488 0.488-0.732 1.098-0.732 1.831 0 0.693 0.244 1.292 0.732 1.8s1.099 0.763 1.831 0.763zM16.366 25.947c0.692 0 1.282-0.214 1.77-0.64s0.732-0.987 0.732-1.678-0.244-1.261-0.732-1.709c-0.489-0.448-1.078-0.671-1.77-0.671-0.65 0-1.21 0.223-1.678 0.671s-0.702 1.018-0.702 1.709c0 0.692 0.234 1.25 0.702 1.678s1.027 0.64 1.678 0.64zM19.113 9.592c0.651 0 1.129-0.203 1.433-0.611 0.305-0.406 0.459-0.874 0.459-1.404 0-0.488-0.154-0.947-0.459-1.373-0.304-0.427-0.782-0.641-1.433-0.641-0.529 0-1.008 0.193-1.434 0.58s-0.64 0.865-0.64 1.434c0 0.571 0.213 1.049 0.64 1.434 0.427 0.389 0.905 0.581 1.434 0.581zM24.848 12.826c0.57 0 1.067-0.213 1.495-0.64 0.427-0.427 0.64-0.947 0.64-1.556 0-0.57-0.214-1.068-0.64-1.495-0.428-0.427-0.927-0.64-1.495-0.64-0.611 0-1.129 0.213-1.555 0.64-0.428 0.427-0.642 0.926-0.642 1.495 0 0.611 0.213 1.129 0.642 1.556s0.947 0.64 1.555 0.64z" id="dplayer-pallette"></path></svg></span></button>
+        `;
+
+        ABP_Text_Input.style='padding-left:50px';
+        ABP_Text_Input.insertAdjacentHTML('beforeBegin', dmSetIconBtnHtml);
+        dmSetBoxHtml=`
+<div class="dplayer-controller dplayer-comment-setting-box" style="display:none;padding-bottom:30px;">
+    <div class="dplayer-comment-setting-color">
+        <div class="dplayer-comment-setting-title">Set danmaku color</div>
+        <label>
+            <input name="dplayer-danmaku-color-0" value="while" checked="" type="radio"><span style="background: #FFFFFF;width:22px;height:22px;display:inline-block;"></span></label>
+        <label>
+            <input name="dplayer-danmaku-color-0" value="red" type="radio"><span style="background: #E54256;width:22px;height:22px;display:inline-block;"></span></label>
+        <label>
+            <input name="dplayer-danmaku-color-0" value="yellow" type="radio"><span style="background: #FFE133;width:22px;height:22px;display:inline-block;"></span></label>
+        <label>
+            <input name="dplayer-danmaku-color-0" value="green" type="radio"><span style="background: #64DD17;width:22px;height:22px;display:inline-block;"></span></label>
+        <label>
+            <input name="dplayer-danmaku-color-0" value="blue" type="radio"><span style="background: #39ccff;width:22px;height:22px;display:inline-block;"></span></label>
+        <label>
+            <input name="dplayer-danmaku-color-0" value="purple" type="radio"><span style="background: #D500F9;width:22px;height:22px;display:inline-block;"></span></label>
+    </div>
+    <div class="dplayer-comment-setting-type">
+        <div class="dplayer-comment-setting-title">Set danmaku type</div>
+        <label>
+            <input name="dplayer-danmaku-type-0" value="top" type="radio"><span>Top</span></label>
+        <label>
+            <input name="dplayer-danmaku-type-0" value="right" checked="" type="radio"><span>Rolling</span></label>
+        <label>
+            <input name="dplayer-danmaku-type-0" value="bottom" type="radio"><span>Bottom</span></label>
+    </div>
+    <div class="dplayer-comment-setting-size">
+        <div class="dplayer-comment-setting-title">Set danmaku size</div>
+        <label>
+            <input name="dplayer-danmaku-size-0" value="25" checked="" type="radio"><span>Normal</span></label>
+        <label>
+            <input name="dplayer-danmaku-size-0" value="45" type="radio"><span>Big</span></label>
+        <label>
+            <input name="dplayer-danmaku-size-0" value="64" type="radio"><span>Max</span></label>
+    </div>
+</div>
+        `;
+        ABP_Text_Input.insertAdjacentHTML('beforeBegin', dmSetBoxHtml);
+        var dmSetBox = ABP_Text.querySelector('div');
+        var dmSetIconBtn = ABP_Text.querySelector('button');
+        var toggleSetting=function () {
+            if (dmSetBox.classList.contains('dplayer-comment-setting-open')) {
+                dmSetBox.classList.remove('dplayer-comment-setting-open');
+                dmSetBox.style.display="none";
+            } else {
+                dmSetBox.classList.add('dplayer-comment-setting-open');
+                dmSetBox.style.display="block";
+            }
+        }
+        var dmSettingApply=function(){
+            var color = dmSetBox.querySelector('div.dplayer-comment-setting-color').querySelector("input:checked").value;
+            var mode = dmSetBox.querySelector('div.dplayer-comment-setting-type').querySelector("input:checked").value;
+            var size = dmSetBox.querySelector('div.dplayer-comment-setting-size').querySelector("input:checked").value;
+            ABP_Text_Input.value=ABP_Text_Input.value.replace(/$|(\{\{([\w\d]*,[\w\d]*,[\w\d]*)\}\})/,'{{'+mode+','+size+','+color+'}}');
+        }
+        dmSetIconBtn.addEventListener('click',toggleSetting);
+        dmSetBox.addEventListener('click',dmSettingApply);
+        //danmaku setting --end--
+
+
         //setting danmaku speed
         if (DanmakuSpeed != undefined&&DanmakuSpeed!=NaN&&DanmakuSpeed>=100&&DanmakuSpeed<=200) {
             debug("DanmakuSpeed: " + DanmakuSpeed);
@@ -2375,17 +2447,17 @@ function InputLisener(k) {
                                             abp.createPopup('[Error] "size" not available.', 2000);
 
                                         }
-                                        if ([ "rot", "btm", "top"].includes(mode)) {
-                                            if (mode == "rot") {
+                                        if ([ "right", "bottom", "top"].includes(mode)) {
+                                            if (mode == "right") {
                                                 mode = 1;
                                             }
-                                            else if (mode == "btm") {
+                                            else if (mode == "bottom") {
                                                 mode = 4;
                                             }
                                             else if (mode == "top") {
                                                 mode = 5;
                                             }
-                                            else if (mode == "l2r") {
+                                            else if (mode == "left") {
                                                 mode = 6;
                                             }
 

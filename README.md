@@ -2,7 +2,7 @@
 
 Compatibility:
 Firefox/Chrome,
-Greasemonkey/Tampermonkey
+Tampermonkey <--- !!!Attention: Greasemonkey 4 was not support!
 
 This script display and post danmaku in "anime1.me" / "video.eyny.com" / "www.tucao.one", 
 danmaku from "bilibili.com" / "ani.gamer.com.tw" / "acfun.cn".
@@ -21,7 +21,7 @@ Other command:
 7: Danmaku speed adjust(100-200%): !dmspd:*** 
 8: Post danmaku: !dm:******
 9: Post danmaku with specify mode/size/color: !dm:******{{mode,size,color}}
-*Mode: rot/btm/top
+*Mode: right/bottom/top
 *Size: 12/16/18/25/36/45/64
 *Color: black/blue/green/orange/pink/purple/red/silver/yellow/white/gold
 9: Current anime on anime1.me page: !anime1
