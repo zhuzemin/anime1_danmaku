@@ -18,7 +18,7 @@
 // @include     https://www.tucao.one/play/*
 // @include     https://www.acfun.cn/bangumi/*
 // @include     https://www.acfun.cn/v/*
-// @version     4.18
+// @version     4.19
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -2049,11 +2049,16 @@ function ABP_Init(object){
         }
         debug("DanmakuSpeed: " + DanmakuSpeed);
         //insert css
+        var head=document.querySelector("head");
         var link=document.createElement("link");
         link.setAttribute("rel","stylesheet");
         link.setAttribute("type","text/css");
         link.setAttribute("href","https://jabbany.github.io/ABPlayerHTML5/dist/css/base.min.css");
-        var head=document.querySelector("head");
+        head.insertBefore(link,null);
+        link=document.createElement("link");
+        link.setAttribute("rel","stylesheet");
+        link.setAttribute("type","text/css");
+        link.setAttribute("href","https://www.tucao.one/player_test/M_dplayer.min.css");
         head.insertBefore(link,null);
         //abplayer init
         abp=ABP.create(object.VideoContainer, {
