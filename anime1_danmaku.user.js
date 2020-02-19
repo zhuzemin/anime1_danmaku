@@ -18,7 +18,7 @@
 // @include     https://www.tucao.one/play/*
 // @include     https://www.acfun.cn/bangumi/*
 // @include     https://www.acfun.cn/v/*
-// @version     4.19
+// @version     4.20
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
