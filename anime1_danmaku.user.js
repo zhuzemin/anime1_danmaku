@@ -1,12 +1,12 @@
 // ==UserScript==
-// @name        anime1 Danmaku
-// @name:zh-CN  anime1 Danmaku
-// @name:zh-TW  anime1 Danmaku
+// @name        play anime danmaku in pirate site
+// @name:zh-CN  play anime danmaku in pirate site
+// @name:zh-TW  play anime danmaku in pirate site
 // @namespace   anime1_danmaku
 // @supportURL  https://github.com/zhuzemin
-// @description anime1.me / video.eyny.com / www.tucao.one Show/Post Danmaku (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
-// @description:zh-CN anime1.me / video.eyny.com / www.tucao.one Show/Post Danmaku (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
-// @description:zh-TW  anime1.me / video.eyny.com / www.tucao.one Show/Post Danmaku (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
+// @description Display/Post Danmaku in anime1.me / video.eyny.com / www.tucao.one  (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
+// @description:zh-CN Display/Post Danmaku in anime1.me / video.eyny.com / www.tucao.one (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
+// @description:zh-TW Display/Post Danmaku in anime1.me / video.eyny.com / www.tucao.one (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
 // @include     https://anime1.me/*
 // @include     https://i.animeone.me/*
 // @include     https://v.anime1.me/watch?v=*
