@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name        play anime danmaku in pirate site
-// @name:zh-CN  play anime danmaku in pirate site
-// @name:zh-TW  play anime danmaku in pirate site
+// @name        anime1 Danmaku
+// @name:zh-CN  anime1 Danmaku
+// @name:zh-TW  anime1 Danmaku
 // @namespace   anime1_danmaku
 // @supportURL  https://github.com/zhuzemin
 // @description Display/Post Danmaku in anime1.me / video.eyny.com / www.tucao.one  (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
