@@ -18,7 +18,7 @@
 // @include     https://www.tucao.one/play/*
 // @include     https://www.acfun.cn/bangumi/*
 // @include     https://www.acfun.cn/v/*
-// @version     4.21
+// @version     4.22
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -47,8 +47,11 @@ var PushEnable=true;
 //when use this userscript in tucao.one, make danmaku disaplay delay
 var TucaoDelay=5;
 var defaultAlias={
-    bahamut:{
-        '异种族风俗娘评鉴指南':'異種族風俗娘評鑑指南 無修正版'
+    'ani.gamer.com.tw':{
+        '异种族风俗娘评鉴指南':'異種族風俗娘評鑑指南 [R18+]'
+    },
+    'jtitle':{
+        '異種族風俗娘評鑑指南 異種族風俗娘評鑑指南 [R18+]':'異種族レビュアーズ'
     }
 }
 //push message
@@ -1005,7 +1008,7 @@ function init(){
                         }
                     },2000);
                 }
-                else if((input.value.match(matching)!=null||input.value.match(MatchingWithTitle))&&(datalist==null||SearchFinished)) {
+                else if((input.value.match(matching)!=null||input.value.match(MatchingWithTitle))&&(datalist.childNodes.length==0||SearchFinished)) {
                     var ManualInput=input.value.match(MatchingWithTitle);
                     if(ManualInput!=null){
                         title=ManualInput[1];
@@ -1070,7 +1073,7 @@ function init(){
                 },2000);
             }
             //input has correct url
-            else if((input.value.match(matching)!=null||input.value.match(MatchingWithTitle))&&(datalist==null||SearchFinished)&&abp==null) {
+            else if((input.value.match(matching)!=null||input.value.match(MatchingWithTitle))&&(datalist.childNodes.length==0||SearchFinished)) {
                 var ManualInput=input.value.match(MatchingWithTitle);
                 if(ManualInput!=null){
                     title=ManualInput[1];
@@ -1134,7 +1137,7 @@ function init(){
                 },2000);
             }
             //input has correct url
-            else if((input.value.match(matching)!=null||input.value.match(MatchingWithTitle))&&(datalist==null||SearchFinished)&&abp==null) {
+            else if((input.value.match(matching)!=null||input.value.match(MatchingWithTitle))&&(datalist.childNodes.length==0||SearchFinished)&&abp==null) {
                 if(title==null){
                     var ManualInput=input.value.match(MatchingWithTitle);
                     if(ManualInput!=null){
@@ -1258,7 +1261,12 @@ function TucaoAlternate(comments) {
 function bahamut(){
     debug('Search danmaku: bahamut');
     var _title=CheckAlias('ani.gamer.com.tw',title);
-    var href="https://ani.gamer.com.tw/search.php?kw="+encodeURIComponent(simplized(_title,"s2t"));
+    _title=_title.split(' ');
+    for(var i=0;i<_title.length;i++){
+        _title[i]=encodeURIComponent(simplized(_title[i],"s2t"));
+    }
+    _title=_title.join('+');
+    var href="https://ani.gamer.com.tw/search.php?kw="+_title;
     var search=new ObjectRequest(href);
     var SearchResult;
     request(search,function (responseDetails) {
@@ -1610,14 +1618,11 @@ function GetJaTitle(func=null){
             }
         }
         else {
-            var value=GM_getValue("AliasSetting")||null;
+            var AliasSetting=GM_getValue("AliasSetting")||{};
             var AliasSetting;
-            var site='Japanese Title';
-            if(value==null){
+            var site='jtitle';
+            if(typeof AliasSetting!='object'){
                 AliasSetting={};
-            }
-            else{
-                AliasSetting=JSON.parse(value);
             }
             if(AliasSetting[site]==undefined){
                 AliasSetting[site]={};
@@ -1628,8 +1633,8 @@ function GetJaTitle(func=null){
                     if(obj.lang=='ja'){
                         debug(obj['*']);
                         var jtitle=obj['*'];
-                        AliasSetting[site][title] = jtitle;
-                        GM_setValue('AliasSetting',JSON.stringify(AliasSetting));
+                        AliasSetting[site][simplized(title)] = jtitle;
+                        GM_setValue('AliasSetting',AliasSetting);
                         abp.createPopup("Alias saved.", 2000);
                         if(func!=null){
                             func();
@@ -1645,7 +1650,7 @@ function GetJaTitle(func=null){
 function pixiv(){
     var DanmakuLink=GM_getValue('DanmakuLink');
     var title=DanmakuLink.match(/\[(.*)\] \[(.*)\] \[(.*)\]/)[2];
-    title=CheckAlias('Japanese Title',title);
+    title=CheckAlias('jtitle',title);
     window.open("https://www.pixiv.net/en/tags/"+encodeURIComponent(title)+"/artworks?s_mode=s_tag");
 }
 
@@ -1765,6 +1770,10 @@ function CheckAlias(site,title) {
     var alias=title;
     var aliasList=GM_getValue('AliasSetting')||{};
     if(aliasList!=undefined){
+        if(typeof AliasSetting!='object')
+        {
+            AliasSetting={};
+        }
         aliasList=Object.assign(defaultAlias,aliasList);
         if (aliasList[site]!=undefined){
             if(aliasList[site][title]!=undefined){
@@ -1792,6 +1801,9 @@ function siteMapping(url) {
     }
     else if(url.includes('tucao')){
         site="www.tucao.one";
+    }
+    else if(url.includes('jtitle')){
+        site="jtitle";
     }
     return site;
     
@@ -2092,11 +2104,14 @@ function ABP_Init(object){
         link.setAttribute("type","text/css");
         link.setAttribute("href","https://jabbany.github.io/ABPlayerHTML5/dist/css/base.min.css");
         head.insertBefore(link,null);
-        link=document.createElement("link");
-        link.setAttribute("rel","stylesheet");
-        link.setAttribute("type","text/css");
-        link.setAttribute("href","https://www.tucao.one/player_test/M_dplayer.min.css");
-        head.insertBefore(link,null);
+        if(!window.location.href.includes('www.tucao.one')){
+            link=document.createElement("link");
+            link.setAttribute("rel","stylesheet");
+            link.setAttribute("type","text/css");
+            link.setAttribute("href","https://www.tucao.one/player_test/M_dplayer.min.css");
+            head.insertBefore(link,null);
+
+        }
         //abplayer init
         abp=ABP.create(object.VideoContainer, {
             "src":{
@@ -2611,7 +2626,12 @@ function InputLisener(k) {
                         break;
                     case "alias": {
                         var AliasSetting=GM_getValue("AliasSetting")||{};
-                        AliasSetting=Object.assign(defaultAlias,JSON.parse(AliasSetting));
+                        debug('typeof AliasSetting: '+typeof AliasSetting)
+                        if(typeof AliasSetting!='object')
+                        {
+                            AliasSetting={};
+                        }
+                        AliasSetting=Object.assign(defaultAlias,AliasSetting);
                         if (commandPrompts.length < 1) {
                             abp.createPopup("Current alias setting: "+JSON.stringify(AliasSetting), 10000);
                         }
@@ -2625,7 +2645,7 @@ function InputLisener(k) {
                                 if(matched!=null){
                                     var site=matched[1].toLowerCase();
                                     debug('site: '+site);
-                                    if(['acfun','bilibili','tucao','bahamut','anime1'].includes(site)){
+                                    if(['acfun','bilibili','tucao','bahamut','anime1','jtitle'].includes(site)){
                                         site=siteMapping(site,null);
                                         var alias=commandPrompts[0].replace(matched[0],"");
 
@@ -2650,7 +2670,7 @@ function InputLisener(k) {
 
                                         }
                                         
-                                        GM_setValue('AliasSetting',JSON.stringify(AliasSetting));
+                                        GM_setValue('AliasSetting',AliasSetting);
                                         abp.createPopup("Alias saved.", 2000);
                                     }
                                     else{
@@ -2673,8 +2693,11 @@ function InputLisener(k) {
                     }
                         break;
                     case "pixiv": {
-                        var jtitle=CheckAlias('Japanese Title',title);
-                        if(jtitle!=title){
+                        var jtitle=CheckAlias('jtitle',title);
+                        debug('jtitle: '+jtitle);
+                        debug('title: '+title);
+
+                        if(jtitle!=simplized(title)){
                             pixiv();
                         }
                         else {
@@ -2711,9 +2734,7 @@ function OtherInsertTucao(tucaoDanmaku,mainDanmaku){
     debug("OtherInsertTucao");
     tucaoDanmaku=tucaoDanmaku
         .replace('</i>','')
-        .replace(/<\?xml version="1\.0" encoding="(utf|UTF)-8"\?>/,'')
-        .replace(/(<d p='|"[\.\d,]*'|">)(.*<\/d>)/g,
-            function(match, $1, $2, offset, original){ return $1+"[tucao]"+$2;});
+        .replace(/<\?xml version="1\.0" encoding="(utf|UTF)-8"\?>/,'');
     debug(tucaoDanmaku);
     debug(mainDanmaku.replace('<i>',tucaoDanmaku));
     return mainDanmaku.replace('<i>',tucaoDanmaku);
