@@ -18,7 +18,7 @@
 // @include     https://www.tucao.one/play/*
 // @include     https://www.acfun.cn/bangumi/*
 // @include     https://www.acfun.cn/v/*
-// @version     4.22
+// @version     4.23
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -1182,7 +1182,7 @@ function eyny(comments){
     VideoContainer.style.width=width+"px";
     VideoContainer.style.height=height+"px";
     var fixwidth = document.querySelector("div.fixwidth");
-    var div=document.querySelector("div");
+    var div=input.parentElement;
     var video = VideoContainer.querySelector("#mediaplayer");
     var object = new ObjectABP(VideoContainer, video, comments, width, height);
         ABP_Init(object);
@@ -1195,7 +1195,7 @@ function eyny(comments){
                 debug("video.style.height: " + video.style.height);
                 VideoContainer.style.width = width + "px";
                 VideoContainer.style.height = height + "px";
-                if (fixwidth.style == "display:none;") {
+                if (div.style.display == "none") {
                     fixwidth.style = "display:block;";
                     div.style = "display:block;";
 
@@ -2092,7 +2092,7 @@ function ABP_Init(object){
         //try ger value of danmaku speed
         var DanmakuSpeed;
         try{
-            DanmakuSpeed=parseInt(GM_getValue("DanmakuSpeed").trim())||150;
+            DanmakuSpeed=parseInt(GM_getValue("DanmakuSpeed").trim())||200;
         }catch(e){
             debug("Not set GM_Value.");
         }
