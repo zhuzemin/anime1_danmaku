@@ -34,7 +34,7 @@ Other command:
 
 Notice:
 *Double click Input will show all search result, you can select one to display(or download).
-*you can don't use "Search Danmaku", instead paste "url" in Input, then will directly load player.
+*you can not use "Search Danmaku", instead paste "url" in Input, then will directly load player.
 "url" like:
 	https://api.bilibili.com/x/v1/dm/list.so?oid=******,
 	https://ani.gamer.com.tw/animeVideo.php?sn=******

@@ -21,7 +21,7 @@
 // @include     http://47.100.0.249/jdplayer/siliplay.php?*
 // @include     http://27.124.39.40/danmu/play.php?*
 // @include     http://www.silisili.me/play/*.html
-// @version     4.24
+// @version     4.25
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -2555,6 +2555,7 @@ function InputLisener(k) {
                 var command = commandPrompts.shift();
                 var DanmakuLink=GM_getValue('DanmakuLink');
                 var title=DanmakuLink.match(/\[(.*)\] \[(.*)\] \[(.*)\]/)[2];
+                var episode=DanmakuLink.match(/\[(.*)\] \[(.*)\] \[(.*)\]/)[3];
                 switch (command) {
                     case "dmspd":
                     case "DmkSpd": {
@@ -2693,7 +2694,7 @@ function InputLisener(k) {
 
                         }
                         else {
-                            if(title!=null&&EpisodeCurrent!=null){
+                            if(title!=null&&episode!=null){
                                 Anime1Comment();
                             }
                             else{
