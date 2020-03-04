@@ -4,9 +4,9 @@
 // @name:zh-TW  anime1 Danmaku
 // @namespace   anime1_danmaku
 // @supportURL  https://github.com/zhuzemin
-// @description Display/Post Danmaku in anime1.me / video.eyny.com / www.tucao.one  (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
-// @description:zh-CN Display/Post Danmaku in anime1.me / video.eyny.com / www.tucao.one (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
-// @description:zh-TW Display/Post Danmaku in anime1.me / video.eyny.com / www.tucao.one (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
+// @description Display/Post Danmaku in anime1.me / video.eyny.com / www.tucao.one / www.silisili.me (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
+// @description:zh-CN Display/Post Danmaku in anime1.me / video.eyny.com / www.tucao.one / www.silisili.me (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
+// @description:zh-TW Display/Post Danmaku in anime1.me / video.eyny.com / www.tucao.one / www.silisili.me (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
 // @include     https://anime1.me/*
 // @include     https://i.animeone.me/*
 // @include     https://v.anime1.me/watch?v=*
@@ -18,7 +18,10 @@
 // @include     https://www.tucao.one/play/*
 // @include     https://www.acfun.cn/bangumi/*
 // @include     https://www.acfun.cn/v/*
-// @version     4.23
+// @include     http://47.100.0.249/jdplayer/siliplay.php?*
+// @include     http://27.124.39.40/danmu/play.php?*
+// @include     http://www.silisili.me/play/*.html
+// @version     4.24
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -56,6 +59,7 @@ var defaultAlias={
 }
 //push message
 var messages=[
+    ["[Update] Support www.silisili.me",5000,2],
     ["[Notice] Search in pixiv: !pixiv",5000,2],
     ["[Notice] Danmaku source page: !source",5000,2],
     ["[Notice] A secret command for who rating this userscript: !secret",5000,5],
@@ -121,9 +125,9 @@ class ObjectRequest{
 // prepare UserPrefs
 setUserPref(
     'DanmakuSpeed',
-    '150',
+    '200',
     'Set danmaku speed',
-    `Enter percentage of speed for Danmaku, (100-200%), more larger more slower, default: 150.`,
+    `Enter percentage of speed for Danmaku, (100-200%), more larger more slower, default: 200.`,
     ','
 );
 
@@ -919,7 +923,7 @@ function isMobile(){var e,t=!1;return e=navigator.userAgent||navigator.vendor||w
 //entry
 function init(){
     debug("init");
-    if(!window.location.href.includes("v.anime1.me")&&!window.location.href.includes("i.animeone.me")){
+    if(!window.location.href.includes("v.anime1.me")&&!window.location.href.includes("i.animeone.me")&&!window.location.href.includes("47.100.0.249")&&!window.location.href.includes("27.124.39.40")){
         //in here clear value , because maybe need open frame in tab
         GM_setValue("DanmakuLink", null);
         GM_setValue("DanmakuLinkTucao", null);
@@ -1168,6 +1172,73 @@ function init(){
     else if(window.location.href.match(/^https:\/\/anime1\.me\/\d*#comment$/)){
         document.querySelector("#dcl_comment_btn").click();
     }
+    else if(window.location.href.includes("www.silisili.me")){
+        DisplayInput(InputPlaceholder);
+
+        /*CreateButton('Search in bilibili',function () {
+            SearchBilibili();
+        });*/
+        var btn=CreateButton('Search Danmaku',function () {
+            if(input.value==""&&datalist.childNodes.length==0){
+                input.value="Searching...";
+                btn.innerHTML="Searching...";
+                let div=document.title.split(' ');
+                title=div[0];
+                EpisodeCurrent=div[1].match(/(\d{1,4})/)[1];
+                debug('title: '+title+" &episode: "+EpisodeCurrent);
+                //alert('title: '+title+'&EpisodeCurrent: '+EpisodeCurrent);
+                acfun();
+                bilibili();
+                TucaoSearch();
+                bahamut();
+
+                var CheckValue=setInterval(function () {
+                    //search success
+                    if(datalist.childNodes.length>=3&&input.value.match(matching)){
+                        InsertDropDown();
+                        btn.innerHTML='Load Player';
+                        clearInterval(CheckValue);
+                    }
+                    else if(input.value=="Search Result: All Failed."){
+                        btn.innerHTML='Search Failed';
+                        clearInterval(CheckValue);
+
+                    }
+                },2000);
+            }
+            else if((input.value.match(matching)!=null||input.value.match(MatchingWithTitle))&&(datalist.childNodes.length==0||SearchFinished)) {
+                var ManualInput=input.value.match(MatchingWithTitle);
+                if(ManualInput!=null){
+                    title=ManualInput[1];
+                    EpisodeCurrent=ManualInput[2].match(/(\d{1,4})/)[1];
+                    debug('title: '+title+'&EpisodeCurrent: '+EpisodeCurrent);
+                }
+                if(input.value.includes('tucao.one')){
+                    GM_setValue("DanmakuLinkTucao", null);
+                    TucaoStatus=3;
+                }
+                GM_setValue("DanmakuLink", input.value);
+                btn.innerHTML="Done";
+                DanmakuDownloaderInit();
+            }
+        });
+    }
+    else if(window.location.href.includes("47.100.0.249")){
+        var CheckValue=setInterval(function () {
+            var ret=GetDanmaku(silisili);
+            if(ret){
+                clearInterval(CheckValue);
+            }
+        },2000);
+    }
+    else if(window.location.href.includes("27.124.39.40")){
+        var CheckValue=setInterval(function () {
+            var ret=GetDanmaku(abplayer);
+            if(ret){
+                clearInterval(CheckValue);
+            }
+        },2000);
+    }
 }
 
 
@@ -1253,6 +1324,26 @@ function TucaoAlternate(comments) {
         var ABP_Unit = VideoContainer.querySelector("div.ABP-Unit");
         document.querySelector("#show_share").style.display = "none";
         document.querySelector("div.footer").style.display = "none";
+}
+
+function silisili(comments) {
+    debug("silisili");
+    var VideoContainer=document.querySelector("body");
+    var video=VideoContainer.querySelector("video.btjson-video.btjson-video-current");
+    var object=new ObjectABP(VideoContainer,video,comments,1173,654);
+    document.querySelector("#player").style.display="none";
+    ABP_Init(object);
+
+}
+
+function abplayer(comments) {
+    debug("abplayer");
+    var VideoContainer=document.querySelector("#player");
+    var video=VideoContainer.querySelector("#video");
+    var object=new ObjectABP(VideoContainer,video,comments,1173,654);
+    VideoContainer.querySelector("div.ABP-Unit").remove();
+    ABP_Init(object);
+
 }
 
 
@@ -2275,7 +2366,7 @@ function ABP_Init(object){
 function GetDanmaku(func) {
     IsDownload=false;
     var DanmakuLink
-    if(window.location.href.includes("i.animeone.me")||window.location.href.includes("v.anime1.me")){
+    if(window.location.href.includes("i.animeone.me")||window.location.href.includes("v.anime1.me")||window.location.href.includes("47.100.0.249")||window.location.href.includes("27.124.39.40")){
 
         try{
             DanmakuLink=GM_getValue("DanmakuLink");

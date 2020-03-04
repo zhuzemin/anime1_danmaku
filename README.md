@@ -4,8 +4,8 @@ Compatibility:
 Firefox/Chrome,
 Tampermonkey <--- !!!Attention: Greasemonkey 4 was not support!
 
-This script display and post danmaku in "anime1.me" / "video.eyny.com" / "www.tucao.one", 
-danmaku from "bilibili.com" / "ani.gamer.com.tw" / "acfun.cn".
+This script display and post danmaku in anime1.me / video.eyny.com / www.tucao.one  / www.silisili.me, 
+danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn.
 
 Usage:
 1: Click button "Search Danmaku", 
