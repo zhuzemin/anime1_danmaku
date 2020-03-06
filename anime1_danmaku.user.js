@@ -21,7 +21,7 @@
 // @include     http://47.100.0.249/jdplayer/siliplay.php?*
 // @include     http://27.124.39.40/danmu/play.php?*
 // @include     http://www.silisili.me/play/*.html
-// @version     4.25
+// @version     4.26
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -931,6 +931,9 @@ function init(){
 
     }
     if(window.location.href.includes("bilibili.com")){
+        if(document.querySelector('div.special-cover')!=null){
+            document.querySelector('div.special-cover').style.display='none';
+        }
         DisplayInput('');
         CreateButton('Detect cid',function () {
             var cid;
