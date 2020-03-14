@@ -21,7 +21,7 @@
 // @include     http://47.100.0.249/jdplayer/siliplay.php?*
 // @include     http://27.124.39.40/danmu/play.php?*
 // @include     http://www.silisili.me/play/*.html
-// @version     4.26
+// @version     4.27
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -990,12 +990,12 @@ function init(){
             });*/
             var btn=CreateButton('Search Danmaku',function () {
                 if(input.value==""&&datalist.childNodes.length==0){
-                    input.value="Searching...";
                     btn.innerHTML="Searching...";
                     title=document.querySelector("h1.entry-title");
                     var array=title.innerText.match(/(.*)\s\[(\d*)\]/);
                     title=array[1];
                     EpisodeCurrent=array[2];
+                    input.value="Title: ["+title+'] Episode: ['+EpisodeCurrent+']';
                     acfun();
                     bilibili();
                     TucaoSearch();
@@ -1124,6 +1124,7 @@ function init(){
                 title=array[1];
                 debug("title: "+title);
                 EpisodeCurrent=array[2];
+                input.value="Title: ["+title+'] Episode: ['+EpisodeCurrent+']';
                 acfun();
                 bilibili();
                 TucaoSearch();
@@ -1189,6 +1190,7 @@ function init(){
                 title=div[0];
                 EpisodeCurrent=div[1].match(/(\d{1,4})/)[1];
                 debug('title: '+title+" &episode: "+EpisodeCurrent);
+                input.value="Title: ["+title+'] Episode: ['+EpisodeCurrent+']';
                 //alert('title: '+title+'&EpisodeCurrent: '+EpisodeCurrent);
                 acfun();
                 bilibili();
@@ -1612,19 +1614,19 @@ function acfun(){
             request(GetAnime, function (responseDetails) {
                 responseText = responseDetails.responseText;
                 var dom = new DOMParser().parseFromString(responseText, "text/html");
-                var bangumiData = dom.querySelectorAll("script")[7];
-                /*for(var s of bangumiData){
-                    debug("bangumiData: "+s.innerText);
+                var bangumiList = dom.querySelectorAll("script")[7];
+                /*for(var s of bangumiList){
+                    debug("bangumiList: "+s.innerText);
 
                 }*/
-                debug("bangumiData: " + bangumiData);
-                bangumiData = bangumiData.innerText.match(/window\.bangumiList = ([^;]*)/)[1];
-                debug("bangumiData: " + bangumiData);
-                bangumiData = JSON.parse(bangumiData);
-                for (var item of bangumiData.items) {
+                debug("bangumiList: " + bangumiList);
+                bangumiList = bangumiList.innerText.match(/window\.bangumiList = ([^;]*)/)[1];
+                debug("bangumiList: " + bangumiList);
+                bangumiList = JSON.parse(bangumiList);
+                for (var item of bangumiList.items) {
                     if (item.episodeName.includes(parseInt(EpisodeCurrent))) {
                         var videoId = item.videoId;
-                        var SearchResultTitle = dom.querySelector("h2.title").textContent;
+                        var SearchResultTitle = dom.querySelector("h1.part-title").textContent;
                         debug('SearchResultTitle: ' + SearchResultTitle);
                         href = 'http://danmu.aixifan.com/V2/' + videoId + '?pageSize=1000&pageNo=1';
                         SearchResult = "Search Result: [Acfun] [" + SearchResultTitle + "] [" + item.episodeName + "] - " + href;
