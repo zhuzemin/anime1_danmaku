@@ -4,7 +4,7 @@ Compatibility:
 Firefox/Chrome,
 Tampermonkey <--- !!!Attention: Greasemonkey 4 was not support!
 
-This script display and post danmaku in anime1.me / video.eyny.com / www.tucao.one  / www.silisili.me, 
+This script display and post danmaku in www.bimibimi.me / video.eyny.com / www.tucao.one, 
 danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn.
 
 Usage:
@@ -24,7 +24,6 @@ Other command:
 *Mode: right/bottom/top
 *Size: 12/16/18/25/36/45/64
 *Color: black/blue/green/orange/pink/purple/red/silver/yellow/white/gold
-9: Current anime on anime1.me page: !anime1
 10: Open this userscript greasyfork page: !fork
 11: Open current anime wiki page: !wiki
 12: Search current anime theme song: !music

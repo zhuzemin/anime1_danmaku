@@ -4,9 +4,9 @@
 // @name:zh-TW  anime1 Danmaku
 // @namespace   anime1_danmaku
 // @supportURL  https://github.com/zhuzemin
-// @description Display/Post Danmaku in anime1.me / video.eyny.com / www.tucao.one / www.silisili.me (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
-// @description:zh-CN Display/Post Danmaku in anime1.me / video.eyny.com / www.tucao.one / www.silisili.me (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
-// @description:zh-TW Display/Post Danmaku in anime1.me / video.eyny.com / www.tucao.one / www.silisili.me (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
+// @description Display/Post Danmaku in www.bimibimi.me / video.eyny.com / www.tucao.one (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
+// @description:zh-CN Display/Post Danmaku in www.bimibimi.me / video.eyny.com / www.tucao.one (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
+// @description:zh-TW Display/Post Danmaku in www.bimibimi.me / video.eyny.com / www.tucao.one (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
 // @include     https://anime1.me/*
 // @include     https://i.animeone.me/*
 // @include     https://v.anime1.me/watch?v=*
@@ -23,7 +23,7 @@
 // @include     http://www.silisili.me/play/*.html
 // @include     http://www.bimibimi.me/bangumi/*
 // @include     http://49.234.56.246/danmu/play.php?url=*
-// @version     4.28
+// @version     4.29
 // @grant       GM_xmlhttpRequest
 // @grant         GM_registerMenuCommand
 // @grant         GM_setValue
@@ -1226,8 +1226,18 @@ function init(){
                     GM_setValue("DanmakuLinkTucao", null);
                     TucaoStatus=3;
                 }
-                GM_setValue("DanmakuLink", input.value);
+                /*GM_setValue("DanmakuLink", input.value);
                 btn.innerHTML="Done";
+                DanmakuDownloaderInit();*/
+                GetDanmaku(silisiliReCreateVideo);
+                GM_setValue("DanmakuLink", input.value);
+                btn.innerHTML='Player loading...';
+                var CheckValue=setInterval(function () {
+                    if(abp!=null){
+                        btn.innerHTML='Done';
+                        clearInterval(CheckValue);
+                    }
+                },2000);
                 DanmakuDownloaderInit();
             }
         });
@@ -1241,6 +1251,16 @@ function init(){
         },2000);
     }
     else if(window.location.href.includes("27.124.39.40")){
+        /*unsafeWindow.ABP=null;
+        window.addEventListener('beforeunload', function (e) { e.preventDefault();e.returnValue = '' });
+        let scriptList=document.querySelectorAll('script');
+        for(let script of scriptList){
+            script.parentElement.removeChild(script);
+            console.log("here")
+            if(script.src=="js/jquery-2.1.4.min.js"){
+                //break;
+            }
+        }*/
         var CheckValue=setInterval(function () {
             var ret=GetDanmaku(abplayer);
             if(ret){
@@ -1337,7 +1357,7 @@ function eyny(comments){
                 debug("video.style.height: " + video.style.height);
                 VideoContainer.style.width = width + "px";
                 VideoContainer.style.height = height + "px";
-                if (div.style.display == "none") {
+                /*if (div.style.display == "none") {
                     fixwidth.style = "display:block;";
                     div.style = "display:block;";
 
@@ -1346,7 +1366,7 @@ function eyny(comments){
                     fixwidth.style = "display:none;";
                     div.style = "display:none;";
 
-                }
+                }*/
             }, 500);
         });
 }
@@ -1393,8 +1413,8 @@ function TucaoAlternate(comments) {
         ABP_Init(object);
 
         var ABP_Unit = VideoContainer.querySelector("div.ABP-Unit");
-        document.querySelector("#show_share").style.display = "none";
-        document.querySelector("div.footer").style.display = "none";
+        //document.querySelector("#show_share").style.display = "none";
+        //document.querySelector("div.footer").style.display = "none";
 }
 
 function silisili(comments) {
@@ -1405,6 +1425,21 @@ function silisili(comments) {
     document.querySelector("#player").style.display="none";
     ABP_Init(object);
 
+}
+
+function silisiliReCreateVideo(comments) {
+    let iframe=document.querySelector('#player_iframe');
+    let src=iframe.src.split('?')[1];
+    debug('src: '+src);
+    let VideoContainer=document.createElement('div');
+    let video=document.createElement('video');
+    video.src=src;
+    VideoContainer.insertBefore(video,null);
+    iframe.parentElement.insertBefore(VideoContainer,null);
+    var object=new ObjectABP(VideoContainer,video,comments,1173,654);
+    ABP_Init(object);
+    iframe.parentElement.className='';
+    iframe.parentElement.removeChild(iframe);
 }
 
 function abplayer(comments) {
@@ -2076,6 +2111,7 @@ function toggleFullScreen() {
         } else if (document.documentElement.webkitRequestFullscreen) {
             document.documentElement.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
         }
+        document.body.style.overflow='hidden';
     }
     else {
         if (document.exitFullscreen) {
@@ -2087,6 +2123,7 @@ function toggleFullScreen() {
         } else if (document.webkitExitFullscreen) {
             document.webkitExitFullscreen();
         }
+        document.body.style.overflow='auto';
     }
 }
 
