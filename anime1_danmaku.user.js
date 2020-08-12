@@ -5,8 +5,8 @@
 // @namespace   anime1_danmaku
 // @supportURL  https://github.com/zhuzemin
 // @description Display/Post Danmaku in www.bimibimi.me / video.eyny.com / www.tucao.one (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
-// @description:zh-CN Display/Post Danmaku in www.bimibimi.me / video.eyny.com / www.tucao.one (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
-// @description:zh-TW Display/Post Danmaku in www.bimibimi.me / video.eyny.com / www.tucao.one (Danmaku from bilibili.com / ani.gamer.com.tw / acfun.cn)
+// @description:zh-CN 观看/发送 弹幕 在 www.bimibimi.me / video.eyny.com / www.tucao.one (弹幕来自 bilibili.com / ani.gamer.com.tw / acfun.cn)
+// @description:zh-TW 觀看/發送 彈幕 在 www.bimibimi.me / video.eyny.com / www.tucao.one (彈幕來自 bilibili.com / ani.gamer.com.tw / acfun.cn)
 // @include     https://anime1.me/*
 // @include     https://i.animeone.me/*
 // @include     https://v.anime1.me/watch?v=*
@@ -42,6 +42,8 @@
 // @connect-src anime1.me
 // @connect-src zh.wikipedia.org
 // @connect-src greasyfork.org
+// @contributionAmount 0.5
+// @contributionURL https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=rzzm@hotmail.com&item_name=Greasy+Fork+donation
 // ==/UserScript==
 
 //user setting
